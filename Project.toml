@@ -34,11 +34,11 @@ NLPModelsJuMP = "0.13.5"
 NLPModelsTest = "0.10.7"
 SparseArrays = "1.10"
 Test = "1.10"
-UnoSolver = "0.1.9"
+UnoSolver = "0.2.1"
 julia = "1.10"
 StaticArrays = "1"
 StableRNGs = "1"
-Vecchia = "0.12.6"
+Vecchia = "0.12.7"
 
 [extras]
 HSL = "34c5aeac-e683-54a6-a0e9-6e0fdc586c50"
