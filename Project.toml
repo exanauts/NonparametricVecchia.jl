@@ -39,11 +39,11 @@ NLPModelsTest = "0.10.7"
 Random = "1.10"
 SparseArrays = "1.10"
 Test = "1.10"
-UnoSolver = "0.2.1"
+UnoSolver = "0.3"
 julia = "1.10"
 StaticArrays = "1"
 StableRNGs = "1"
-Vecchia = "0.12.7"
+Vecchia = "0.13"
 
 [extras]
 AMDGPU = "21141c5a-9bdb-4563-92ae-f87d6854732e"
