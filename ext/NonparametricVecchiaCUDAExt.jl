@@ -2,7 +2,7 @@ module NonparametricVecchiaCUDAExt
 
 using NonparametricVecchia
 using CUDA
-using CUDA.CUSPARSE
+using CUDA.cuSPARSE: CuSparseMatrixCSC
 
 function NonparametricVecchia.VecchiaModel(I::Vector{Int}, J::Vector{Int}, samples::CuMatrix{T}; kwargs...) where T
     return NonparametricVecchia.vecchia_model_gpu(I, J, samples, "nonparametric_vecchia_cuda"; kwargs...)

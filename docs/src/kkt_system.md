@@ -46,10 +46,13 @@ norm(result_default.solution - result_vecchia.solution, Inf)
 
 ## Usage on GPU
 
-`VecchiaKKTSystem` also runs on NVIDIA and AMD GPUs: the factorizations and the solves
-with the blocks `Hⱼ` are performed by GPU kernels written with
-[KernelAbstractions.jl](https://github.com/JuliaGPU/KernelAbstractions.jl), one block per thread.
-It suffices to store the samples in a `CuMatrix` or a `ROCMatrix`:
+`VecchiaKKTSystem` also runs on NVIDIA GPUs with [CUDA.jl](https://github.com/JuliaGPU/CUDA.jl) (v6)
+and on AMD GPUs with [AMDGPU.jl](https://github.com/JuliaGPU/AMDGPU.jl).
+The factorizations and the solves with the blocks `Hⱼ` are performed by GPU kernels written with
+[KernelAbstractions.jl](https://github.com/JuliaGPU/KernelAbstractions.jl), one block per thread,
+and the model itself (objective, gradient, Hessian) is evaluated on the GPU.
+It suffices to store the samples in a `CuMatrix` or a `ROCMatrix`, and to load
+[MadNLPGPU.jl](https://github.com/MadNLP/MadNLP.jl/tree/master/lib/MadNLPGPU):
 
 ```julia
 using CUDA, MadNLPGPU

@@ -56,8 +56,12 @@ per column of the factor, factorized once and reused across iterations) and
 independent `2 × 2` systems. This is usually much faster than the default
 `SparseKKTSystem`. The `linear_solver` option of MadNLP is ignored.
 
-The same KKT system runs on NVIDIA and AMD GPUs when the samples are stored in a
-`CuMatrix` or a `ROCMatrix`:
+### GPU support
+
+NVIDIA and AMD GPUs are supported through [CUDA.jl](https://github.com/JuliaGPU/CUDA.jl) (v6)
+and [AMDGPU.jl](https://github.com/JuliaGPU/AMDGPU.jl).
+When the samples are stored in a `CuMatrix` or a `ROCMatrix`, the model is built on the GPU,
+and `VecchiaKKTSystem` performs the factorizations and the solves with GPU kernels:
 
 ```julia
 using CUDA, MadNLPGPU                          # or: using AMDGPU, MadNLPGPU
