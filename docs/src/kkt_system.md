@@ -4,7 +4,7 @@ The optimization problem behind a [`VecchiaModel`](@ref) has a very particular
 structure: the Hessian of the objective is block diagonal, with one dense block
 `Hⱼ` per column of the factor, and each constraint only couples the diagonal entry
 of a column with its logarithm `wⱼ`.
-`VecchiaKKTSystem` is a custom KKT system for [MadNLP.jl](https://github.com/MadNLP/MadNLP.jl)
+`VecchiaKKTSystem` is a custom KKT system for [MadNLP.jl](https://github.com/madsuite-org/MadNLP.jl)
 that exploits this structure to solve the Newton systems of the interior-point method:
 
 1. the blocks `Hⱼ` are factorized with a dense Cholesky factorization;
@@ -52,7 +52,7 @@ The factorizations and the solves with the blocks `Hⱼ` are performed by GPU ke
 [KernelAbstractions.jl](https://github.com/JuliaGPU/KernelAbstractions.jl), one block per thread,
 and the model itself (objective, gradient, Hessian) is evaluated on the GPU.
 It suffices to store the samples in a `CuMatrix` or a `ROCMatrix`, and to load
-[MadNLPGPU.jl](https://github.com/MadNLP/MadNLP.jl/tree/master/lib/MadNLPGPU):
+[MadNLPGPU.jl](https://github.com/madsuite-org/MadNLP.jl/tree/master/lib/MadNLPGPU):
 
 ```julia
 using CUDA, MadNLPGPU
