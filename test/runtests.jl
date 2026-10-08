@@ -10,7 +10,7 @@ using MadNLPGPU
 using SparseArrays
 using LinearAlgebra
 using CUDA
-using CUDSS
+using AMDGPU
 using NLPModels
 using NLPModelsTest
 using StableRNGs
@@ -42,11 +42,16 @@ include("test_jump.jl")
 include("test_memory_allocation_cpu.jl")
 # include("test_cpu_compatible_with_jump.jl")
 
-if CUDA.has_cuda()
+if CUDA.functional()
     # include("test_gpu_compatible_with_jump.jl")
+    GPUMatrix = CuMatrix
     include("test_cpu_compatible_with_gpu.jl")
     include("test_memory_allocation_gpu.jl")
-    include("test_kkt_system_gpu.jl")
+end
+
+if AMDGPU.functional()
+    GPUMatrix = ROCMatrix
+    include("test_cpu_compatible_with_gpu.jl")
 end
 
 include("test_model_solver.jl")

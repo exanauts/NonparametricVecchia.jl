@@ -7,6 +7,7 @@ using SparseArrays
 include("VecchiaModel.jl")
 include("api.jl")
 include("kkt_blocks.jl")
+include("gpu.jl")
 
 """
     VecchiaKKTSystem

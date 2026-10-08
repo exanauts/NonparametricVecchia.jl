@@ -46,16 +46,25 @@ norm(result_default.solution - result_vecchia.solution, Inf)
 
 ## Usage on GPU
 
-`VecchiaKKTSystem` also runs on NVIDIA GPUs: the factorizations and the solves with
-the blocks `Hⱼ` are performed by GPU kernels, one block per thread.
-It suffices to store the samples in a `CuMatrix`:
+`VecchiaKKTSystem` also runs on NVIDIA and AMD GPUs: the factorizations and the solves
+with the blocks `Hⱼ` are performed by GPU kernels written with
+[KernelAbstractions.jl](https://github.com/JuliaGPU/KernelAbstractions.jl), one block per thread.
+It suffices to store the samples in a `CuMatrix` or a `ROCMatrix`:
 
 ```julia
-using CUDA, CUDSS, MadNLPGPU
+using CUDA, MadNLPGPU
 
 nlp = VecchiaModel(pattern, CuMatrix(samples))
 result = madnlp(nlp; kkt_system=VecchiaKKTSystem)
 L = recover_factor(nlp, result.solution)  # CuSparseMatrixCSC
+```
+
+```julia
+using AMDGPU, MadNLPGPU
+
+nlp = VecchiaModel(pattern, ROCMatrix(samples))
+result = madnlp(nlp; kkt_system=VecchiaKKTSystem)
+L = recover_factor(nlp, result.solution)  # ROCSparseMatrixCSC
 ```
 
 ## Bounds and regularization

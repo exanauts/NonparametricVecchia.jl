@@ -56,14 +56,15 @@ per column of the factor, factorized once and reused across iterations) and
 independent `2 × 2` systems. This is usually much faster than the default
 `SparseKKTSystem`. The `linear_solver` option of MadNLP is ignored.
 
-The same KKT system runs on NVIDIA GPUs when the samples are stored in a `CuMatrix`:
+The same KKT system runs on NVIDIA and AMD GPUs when the samples are stored in a
+`CuMatrix` or a `ROCMatrix`:
 
 ```julia
-using CUDA, CUDSS, MadNLPGPU
+using CUDA, MadNLPGPU                          # or: using AMDGPU, MadNLPGPU
 
-nlp = VecchiaModel(pattern, CuMatrix(samples))
+nlp = VecchiaModel(pattern, CuMatrix(samples)) # or: ROCMatrix(samples)
 result = madnlp(nlp; kkt_system=VecchiaKKTSystem)
-L = recover_factor(nlp, result.solution)       # CuSparseMatrixCSC
+L = recover_factor(nlp, result.solution)       # CuSparseMatrixCSC or ROCSparseMatrixCSC
 ```
 
 If the number of replicates `m` is smaller than the number of nonzeros per column

@@ -61,7 +61,7 @@ Use [`recover_factor`](@ref) to build the factor from a solution.
 - `L` / `U`: sparse lower or upper triangular matrix whose sparsity pattern is the one of the factor;
 - `I`, `J`: sparsity pattern of the factor, in COO format (`format=:coo`, row and column indices)
   or CSC format (`format=:csc`, `rowval` and `colptr`), with `uplo=:L` or `uplo=:U`;
-- `samples`: matrix of size `m × n`, with one replicate per row. A `CuMatrix` builds a model on GPU.
+- `samples`: matrix of size `m × n`, with one replicate per row. A `CuMatrix` or a `ROCMatrix` builds a model on an NVIDIA or AMD GPU.
 
 #### Keyword arguments
 

@@ -11,10 +11,12 @@ on:
     - cron: '0 0 * * 0'
 
 jobs:
-  test-moonshot:
-    runs-on: [self-hosted, Linux, X64, gpu, cuda]
+  test-gpu:
+    runs-on: [self-hosted, Linux, X64, gpu, '${{ matrix.backend }}']
     strategy:
+      fail-fast: false
       matrix:
+        backend: [cuda, amdgpu]
         os: [ubuntu-24.04]
         julia-version: ['lts', '1']
         julia-arch: [x64]

@@ -9,6 +9,7 @@ NLPModels = "a4795742-8479-5a88-8948-cc11e1c8c1a6"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [weakdeps]
+AMDGPU = "21141c5a-9bdb-4563-92ae-f87d6854732e"
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 KernelAbstractions = "63c18a36-062a-441e-b654-da1e3ab1ce7c"
 MadNLP = "2621e9c9-9eb4-46b1-8089-e8c72242dfb6"
@@ -16,13 +17,15 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Vecchia = "8d73829f-f4b0-474a-9580-cecc8e084068"
 
 [extensions]
-NonparametricVecchiaCUDAExt = ["CUDA", "KernelAbstractions"]
+NonparametricVecchiaAMDGPUExt = "AMDGPU"
+NonparametricVecchiaCUDAExt = "CUDA"
+NonparametricVecchiaKernelAbstractionsExt = "KernelAbstractions"
 NonparametricVecchiaMadNLPExt = "MadNLP"
 NonparametricVecchiaVecchiaExt = ["StaticArrays", "Vecchia"]
 
 [compat]
+AMDGPU = "2"
 CUDA = "5.8.2, 6"
-CUDSS = "0.7, 0.8"
 HSL = "0.5.2"
 Ipopt = "1.10.6"
 JuMP = "1.27.0"
@@ -45,7 +48,7 @@ StableRNGs = "1"
 Vecchia = "0.12.7"
 
 [extras]
-CUDSS = "45b445bb-4962-46a0-9369-b4df9d0f772e"
+AMDGPU = "21141c5a-9bdb-4563-92ae-f87d6854732e"
 HSL = "34c5aeac-e683-54a6-a0e9-6e0fdc586c50"
 Ipopt = "b6b21f68-93f8-5de0-b562-5493be1d77c9"
 JuMP = "4076af6c-e467-56ae-b986-b466b2749572"
@@ -61,4 +64,4 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 UnoSolver = "1baa60ac-02f7-4b39-a7a8-2f4f58486b05"
 
 [targets]
-test = ["Test", "JuMP", "Ipopt", "NLPModelsIpopt", "NLPModelsJuMP", "UnoSolver", "MadNLP", "MadNLPGPU", "MadNLPHSL", "NLPModelsTest", "Random", "HSL", "StableRNGs", "CUDA", "CUDSS", "Vecchia", "StaticArrays"]
+test = ["Test", "AMDGPU", "JuMP", "Ipopt", "NLPModelsIpopt", "NLPModelsJuMP", "UnoSolver", "MadNLP", "MadNLPGPU", "MadNLPHSL", "NLPModelsTest", "Random", "HSL", "StableRNGs", "CUDA", "Vecchia", "StaticArrays"]
