@@ -21,7 +21,7 @@ NonparametricVecchiaMadNLPExt = "MadNLP"
 NonparametricVecchiaVecchiaExt = ["StaticArrays", "Vecchia"]
 
 [compat]
-CUDA = "5.8.2"
+CUDA = "5.8.2, 6"
 CUDSS = "0.7, 0.8"
 HSL = "0.5.2"
 Ipopt = "1.10.6"

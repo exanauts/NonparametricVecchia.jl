@@ -26,3 +26,49 @@ julia> ]
 pkg> add https://github.com/exanauts/NonparametricVecchia.jl.git
 pkg> test NonparametricVecchia
 ```
+
+## Usage
+
+A `VecchiaModel` is an [NLPModels.jl](https://github.com/JuliaSmoothOptimizers/NLPModels.jl)
+model, so it can be solved with any compatible solver (MadNLP, Ipopt, Uno, ...).
+The sparsity pattern of the factor is given as a `LowerTriangular` or
+`UpperTriangular` sparse matrix, and the samples are stored row-wise
+(one replicate per row):
+
+```julia
+using NonparametricVecchia, MadNLP, SparseArrays, LinearAlgebra
+
+n, k, m = 1000, 10, 200                       # size, conditioning points, replicates
+samples = randn(m, n)
+pattern = LowerTriangular(spdiagm([-j => trues(n - j) for j in 0:k]...))
+
+nlp = VecchiaModel(pattern, samples)
+result = madnlp(nlp; kkt_system=VecchiaKKTSystem)
+L = recover_factor(nlp, result.solution)       # Σ⁻¹ ≈ L * L'
+```
+
+### Structure-exploiting KKT system
+
+With `kkt_system=VecchiaKKTSystem`, MadNLP does not use a sparse linear solver:
+the Newton systems of the interior-point method are solved by block elimination,
+with dense Cholesky factorizations of the diagonal blocks of the Hessian (one block
+per column of the factor, factorized once and reused across iterations) and
+independent `2 × 2` systems. This is usually much faster than the default
+`SparseKKTSystem`. The `linear_solver` option of MadNLP is ignored.
+
+The same KKT system runs on NVIDIA GPUs when the samples are stored in a `CuMatrix`:
+
+```julia
+using CUDA, CUDSS, MadNLPGPU
+
+nlp = VecchiaModel(pattern, CuMatrix(samples))
+result = madnlp(nlp; kkt_system=VecchiaKKTSystem)
+L = recover_factor(nlp, result.solution)       # CuSparseMatrixCSC
+```
+
+If the number of replicates `m` is smaller than the number of nonzeros per column
+(`k + 1`), the blocks of the Hessian are singular. Adding a ridge penalty with the
+keyword `lambda` (for instance `VecchiaModel(pattern, samples; lambda=1e-6)`) makes
+them positive definite, so that they are factorized only once.
+
+See the [documentation](https://exanauts.github.io/NonparametricVecchia.jl/dev) for more details.

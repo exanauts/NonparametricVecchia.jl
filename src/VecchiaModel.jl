@@ -40,6 +40,35 @@ mutable struct VecchiaModel{T, S, VI, M} <: AbstractNLPModel{T, S}
     cache::VecchiaCache{T, S, VI, M}
 end
 
+"""
+    nlp = VecchiaModel(L::LowerTriangular, samples; lvar_diag, uvar_diag, lambda)
+    nlp = VecchiaModel(U::UpperTriangular, samples; lvar_diag, uvar_diag, lambda)
+    nlp = VecchiaModel(I, J, samples; lvar_diag, uvar_diag, lambda, format=:coo, uplo=:L)
+
+Optimization problem whose solution is a sparse triangular factor `L` such that
+`L * L'` approximates the inverse of the covariance matrix of the `samples`.
+The model is an `AbstractNLPModel` and can be solved with any solver of the
+JuliaSmoothOptimizers ecosystem, for instance with MadNLP and
+`kkt_system=VecchiaKKTSystem`.
+
+The variables are the nonzeros of the factor, stored columnwise, followed by the
+logarithms `w` of its diagonal entries, which are linked to the diagonal entries
+by the equality constraints `exp(wⱼ) - Lⱼⱼ = 0`.
+Use [`recover_factor`](@ref) to build the factor from a solution.
+
+#### Arguments
+
+- `L` / `U`: sparse lower or upper triangular matrix whose sparsity pattern is the one of the factor;
+- `I`, `J`: sparsity pattern of the factor, in COO format (`format=:coo`, row and column indices)
+  or CSC format (`format=:csc`, `rowval` and `colptr`), with `uplo=:L` or `uplo=:U`;
+- `samples`: matrix of size `m × n`, with one replicate per row. A `CuMatrix` builds a model on GPU.
+
+#### Keyword arguments
+
+- `lvar_diag`, `uvar_diag`: lower and upper bounds on the diagonal entries of the factor
+  (by default `1e-10` and `1e10`). They are imposed on the variables `w = log(diag(L))`;
+- `lambda`: ridge penalty `(lambda / 2) * ‖L‖²_F` added to the objective (by default `0`).
+"""
 function VecchiaModel(I::Vector{Int}, J::Vector{Int}, samples::Matrix{T};
                       lvar_diag::Union{Nothing,Vector{T}}=nothing, 
                       uvar_diag::Union{Nothing,Vector{T}}=nothing,
@@ -165,6 +194,12 @@ function create_vecchia_cache(I::Vector{Int}, J::Vector{Int}, samples::Matrix{T}
     )
 end
 
+"""
+    factor = recover_factor(nlp::VecchiaModel, solution)
+
+Build the sparse triangular factor from a `solution` of `nlp`.
+The factor is a `SparseMatrixCSC` on CPU and a `CuSparseMatrixCSC` on GPU.
+"""
 function recover_factor(nlp::VecchiaModel{T,Vector{T}}, solution::Vector{T}) where T
     n = nlp.cache.n
     colptr = nlp.cache.colptrL
