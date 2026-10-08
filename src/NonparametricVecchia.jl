@@ -1,12 +1,12 @@
 module NonparametricVecchia
 
-using KernelAbstractions
 using LinearAlgebra
 using NLPModels
 using SparseArrays
 
 include("VecchiaModel.jl")
 include("api.jl")
+include("kkt_blocks.jl")
 
 """
     VecchiaKKTSystem

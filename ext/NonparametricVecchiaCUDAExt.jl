@@ -248,4 +248,64 @@ end
     nothing
 end
 
+#=
+    Dense block operations used by `VecchiaKKTSystem`, one GPU thread per block.
+=#
+@kernel function vecchia_factorize_blocks_kernel!(L, hess_copy, pr_copy, hinv_col, minv, info,
+                                                  @Const(hess), @Const(pr_diag), @Const(m),
+                                                  @Const(xoff), @Const(hoff), @Const(dloc))
+    j = @index(Global)
+    NonparametricVecchia._vecchia_factorize_block!(j, L, hess_copy, pr_copy, hinv_col, minv, info,
+                                                   hess, pr_diag, m, xoff, hoff, dloc)
+end
+
+@kernel function vecchia_solve_blocks_kernel!(v, @Const(L), @Const(m), @Const(xoff), @Const(hoff))
+    j = @index(Global)
+    NonparametricVecchia._packed_solve!(v, L, xoff[j], hoff[j], m[j])
+end
+
+@kernel function vecchia_update_blocks_kernel!(v, @Const(hinv_col), @Const(coef), @Const(m), @Const(xoff))
+    j = @index(Global)
+    NonparametricVecchia._vecchia_update_block!(j, v, hinv_col, coef, m, xoff)
+end
+
+@kernel function vecchia_mul_blocks_kernel!(y, @Const(hess), @Const(x), alpha, beta,
+                                            @Const(m), @Const(xoff), @Const(hoff))
+    j = @index(Global)
+    NonparametricVecchia._vecchia_mul_block!(j, y, hess, x, alpha, beta, m, xoff, hoff)
+end
+
+function NonparametricVecchia.vecchia_factorize_blocks!(L::CuVector, hess_copy, pr_copy, hinv_col, minv, info,
+                                                        hess, pr_diag, m, xoff, hoff, dloc)
+    backend = KernelAbstractions.get_backend(L)
+    kernel = vecchia_factorize_blocks_kernel!(backend)
+    kernel(L, hess_copy, pr_copy, hinv_col, minv, info, hess, pr_diag, m, xoff, hoff, dloc, ndrange=length(m))
+    KernelAbstractions.synchronize(backend)
+    return L
+end
+
+function NonparametricVecchia.vecchia_solve_blocks!(v, L::CuVector, m, xoff, hoff)
+    backend = KernelAbstractions.get_backend(L)
+    kernel = vecchia_solve_blocks_kernel!(backend)
+    kernel(v, L, m, xoff, hoff, ndrange=length(m))
+    KernelAbstractions.synchronize(backend)
+    return v
+end
+
+function NonparametricVecchia.vecchia_update_blocks!(v, hinv_col::CuVector, coef, m, xoff)
+    backend = KernelAbstractions.get_backend(hinv_col)
+    kernel = vecchia_update_blocks_kernel!(backend)
+    kernel(v, hinv_col, coef, m, xoff, ndrange=length(m))
+    KernelAbstractions.synchronize(backend)
+    return v
+end
+
+function NonparametricVecchia.vecchia_mul_blocks!(y, hess::CuVector, x, alpha, beta, m, xoff, hoff)
+    backend = KernelAbstractions.get_backend(hess)
+    kernel = vecchia_mul_blocks_kernel!(backend)
+    kernel(y, hess, x, alpha, beta, m, xoff, hoff, ndrange=length(m))
+    KernelAbstractions.synchronize(backend)
+    return y
+end
+
 end  # end module
