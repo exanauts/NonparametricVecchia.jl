@@ -171,7 +171,7 @@ function create_vecchia_cache(I::Vector{Int}, J::Vector{Int}, samples::Matrix{T}
     nnzL = length(rowsL)
     m = [colptrL[j+1] - colptrL[j] for j in 1:n]
 
-    # Number of nonzeros in the the lower triangular part of the Hessians
+    # Number of nonzeros in the lower triangular part of the Hessians
     nnzh_tri_obj = sum(m[j] * (m[j] + 1) for j in 1:n) ÷ 2
     nnzh_tri_lag = nnzh_tri_obj + n
 

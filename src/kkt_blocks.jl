@@ -124,7 +124,7 @@ end
 
 #=
     Operations on all blocks, used by `VecchiaKKTSystem`.
-    The methods below run on CPU; the CUDA extension implements them with GPU kernels.
+    The methods below run on CPU; the KernelAbstractions extension implements them with GPU kernels.
 =#
 function vecchia_factorize_blocks!(L::Vector, hess_copy, pr_copy, hinv_col, minv, info,
                                    hess, pr_diag, m, xoff, hoff, dloc)

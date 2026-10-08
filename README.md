@@ -56,6 +56,11 @@ per column of the factor, factorized once and reused across iterations) and
 independent `2 × 2` systems. This is usually much faster than the default
 `SparseKKTSystem`. The `linear_solver` option of MadNLP is ignored.
 
+If the number of replicates `m` is smaller than the number of nonzeros per column
+(`k + 1`), the blocks of the Hessian are singular. Adding a ridge penalty with the
+keyword `lambda` (for instance `VecchiaModel(pattern, samples; lambda=1e-6)`) makes
+them positive definite, so that they are factorized only once.
+
 ### GPU support
 
 NVIDIA and AMD GPUs are supported through [CUDA.jl](https://github.com/JuliaGPU/CUDA.jl) (v6)
@@ -70,10 +75,5 @@ nlp = VecchiaModel(pattern, CuMatrix(samples)) # or: ROCMatrix(samples)
 result = madnlp(nlp; kkt_system=VecchiaKKTSystem)
 L = recover_factor(nlp, result.solution)       # CuSparseMatrixCSC or ROCSparseMatrixCSC
 ```
-
-If the number of replicates `m` is smaller than the number of nonzeros per column
-(`k + 1`), the blocks of the Hessian are singular. Adding a ridge penalty with the
-keyword `lambda` (for instance `VecchiaModel(pattern, samples; lambda=1e-6)`) makes
-them positive definite, so that they are factorized only once.
 
 See the [documentation](https://exanauts.github.io/NonparametricVecchia.jl/dev) for more details.
