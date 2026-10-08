@@ -1,5 +1,6 @@
 module NonparametricVecchia
 
+using KernelAbstractions
 using LinearAlgebra
 using NLPModels
 using SparseArrays
@@ -10,7 +11,7 @@ include("api.jl")
 """
     VecchiaKKTSystem
 
-Structure-exploiting KKT system for solving a [`VecchiaModel`](@ref) with MadNLP.
+Structure-exploiting KKT system for solving a `VecchiaModel` with MadNLP.
 
 The Newton system of the interior-point method is solved by block elimination:
 the dense diagonal blocks `Hⱼ` of the Hessian of the objective are factorized with a
