@@ -10,6 +10,7 @@ using MadNLPGPU
 using SparseArrays
 using LinearAlgebra
 using CUDA
+using CUDSS
 using NLPModels
 using NLPModelsTest
 using StableRNGs
