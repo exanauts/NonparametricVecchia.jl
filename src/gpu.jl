@@ -27,13 +27,14 @@ function vecchia_model_gpu(I::Vector{Int}, J::Vector{Int}, samples::AbstractMatr
     w_lvar = view(lvar, cache.nnzL+1:nvar)
     w_uvar = view(uvar, cache.nnzL+1:nvar)
     if !isnothing(lvar_diag)
-        w_lvar .= log.(lvar_diag)
+        # The bounds may be given on the CPU or on the GPU.
+        w_lvar .= log.(copyto!(similar(samples, T, cache.n), lvar_diag))
     else
         w_lvar .= log(T(1e-10))
     end
 
     if !isnothing(uvar_diag)
-        w_uvar .= log.(uvar_diag)
+        w_uvar .= log.(copyto!(similar(samples, T, cache.n), uvar_diag))
     else
         w_uvar .= log(T(1e10))
     end

@@ -65,9 +65,15 @@ Use [`recover_factor`](@ref) to build the factor from a solution.
 
 #### Keyword arguments
 
-- `lvar_diag`, `uvar_diag`: lower and upper bounds on the diagonal entries of the factor
-  (by default `1e-10` and `1e10`). They are imposed on the variables `w = log(diag(L))`;
+- `lvar_diag`, `uvar_diag`: vectors of length `n` with the lower and upper bounds on the diagonal
+  entries of the factor (by default, all bounds are `1e-10` and `1e10`). They are imposed on the
+  variables `w = log(diag(L))` as `log.(lvar_diag) ≤ w ≤ log.(uvar_diag)`, so the bounds must be
+  nonnegative, and a lower bound equal to `0` means no lower bound. For a model on GPU, the
+  vectors can be stored on the CPU or on the GPU;
 - `lambda`: ridge penalty `(lambda / 2) * ‖L‖²_F` added to the objective (by default `0`).
+  It penalizes all nonzeros of the factor, including its diagonal, and adds `lambda` to the
+  diagonal of each block of the Hessian, which makes the blocks positive definite when the
+  number of replicates is smaller than the number of nonzeros in a column of the factor.
 """
 function VecchiaModel(I::Vector{Int}, J::Vector{Int}, samples::Matrix{T};
                       lvar_diag::Union{Nothing,Vector{T}}=nothing, 
@@ -197,8 +203,10 @@ end
 """
     factor = recover_factor(nlp::VecchiaModel, solution)
 
-Build the sparse triangular factor from a `solution` of `nlp`.
-The factor is a `SparseMatrixCSC` on CPU and a `CuSparseMatrixCSC` on GPU.
+Build the sparse triangular factor from a `solution` of `nlp`, i.e., the first
+`nlp.cache.nnzL` entries of `solution` stored in the sparsity pattern of the factor.
+The factor is a `SparseMatrixCSC` on CPU, a `CuSparseMatrixCSC` on NVIDIA GPUs
+(CUDA.jl), and a `ROCSparseMatrixCSC` on AMD GPUs (AMDGPU.jl).
 """
 function recover_factor(nlp::VecchiaModel{T,Vector{T}}, solution::Vector{T}) where T
     n = nlp.cache.n
