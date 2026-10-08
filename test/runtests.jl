@@ -10,9 +10,11 @@ using MadNLPGPU
 using SparseArrays
 using LinearAlgebra
 using CUDA
+using AMDGPU
 using NLPModels
 using NLPModelsTest
 using StableRNGs
+using Random
 
 import NonparametricVecchia: VecchiaCache
 
@@ -40,23 +42,23 @@ include("test_jump.jl")
 include("test_memory_allocation_cpu.jl")
 # include("test_cpu_compatible_with_jump.jl")
 
-if CUDA.has_cuda()
+if CUDA.functional()
     # include("test_gpu_compatible_with_jump.jl")
+    GPUMatrix = CuMatrix
     include("test_cpu_compatible_with_gpu.jl")
     include("test_memory_allocation_gpu.jl")
 end
 
+if AMDGPU.functional()
+    GPUMatrix = ROCMatrix
+    include("test_cpu_compatible_with_gpu.jl")
+end
+
 include("test_model_solver.jl")
+include("test_kkt_system.jl")
 include("test_coo_vs_csc.jl")
 
 using Vecchia
 using StaticArrays
 
 include("vecchia.jl")
-
-using HSL
-using MadNLPHSL
-
-if LIBHSL_isfunctional()
-    include("test_linear_solver.jl")
-end
