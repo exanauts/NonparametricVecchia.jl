@@ -17,10 +17,8 @@ jobs:
       fail-fast: false
       matrix:
         backend: [cuda, amdgpu]
-        os: [ubuntu-24.04]
         julia-version: ['lts', '1']
         julia-arch: [x64]
-        hsl-version: ['2025.7.21']
 
     steps:
       - uses: actions/checkout@v6
@@ -29,19 +27,6 @@ jobs:
           version: ${{ matrix.julia-version }}
           arch: ${{ matrix.julia-arch }}
       - uses: julia-actions/julia-buildpkg@latest
-      - name: Set HSL_VERSION as environment variable
-        run: echo "HSL_VERSION=${{ matrix.hsl-version }}" >> $GITHUB_ENV
-      - name: Install HSL_jll.jl
-        shell: julia --color=yes {0}
-        run: |
-          using Pkg
-          Pkg.activate(".")
-          path_HSL_jll = "/scratch/github-actions/actions_runner_hsl/HSL_jll.jl.v" * ENV["HSL_VERSION"]
-          if isdir(path_HSL_jll)
-              Pkg.develop(path=path_HSL_jll)
-          else
-              @warn "HSL_jll.jl not found at $path_HSL_jll, the tests with HSL are skipped."
-          end
       - name: Test NonparametricVecchia.jl
         shell: julia --color=yes {0}
         run: |
