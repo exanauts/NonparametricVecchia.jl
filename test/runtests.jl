@@ -13,6 +13,7 @@ using CUDA
 using NLPModels
 using NLPModelsTest
 using StableRNGs
+using Random
 
 import NonparametricVecchia: VecchiaCache
 
@@ -44,9 +45,11 @@ if CUDA.has_cuda()
     # include("test_gpu_compatible_with_jump.jl")
     include("test_cpu_compatible_with_gpu.jl")
     include("test_memory_allocation_gpu.jl")
+    include("test_kkt_system_gpu.jl")
 end
 
 include("test_model_solver.jl")
+include("test_kkt_system.jl")
 include("test_coo_vs_csc.jl")
 
 using Vecchia

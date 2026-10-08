@@ -4,18 +4,20 @@ version = "0.1.0"
 authors = ["Caleb Derrickson (@CalebDerrickson), Alexis Montoison (@amontoison)", "Chris Geoga (@cgeoga)"]
 
 [deps]
+KernelAbstractions = "63c18a36-062a-441e-b654-da1e3ab1ce7c"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 NLPModels = "a4795742-8479-5a88-8948-cc11e1c8c1a6"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [weakdeps]
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
-KernelAbstractions = "63c18a36-062a-441e-b654-da1e3ab1ce7c"
+MadNLP = "2621e9c9-9eb4-46b1-8089-e8c72242dfb6"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Vecchia = "8d73829f-f4b0-474a-9580-cecc8e084068"
 
 [extensions]
-NonparametricVecchiaCUDAExt = ["CUDA", "KernelAbstractions"]
+NonparametricVecchiaCUDAExt = "CUDA"
+NonparametricVecchiaMadNLPExt = "MadNLP"
 NonparametricVecchiaVecchiaExt = ["StaticArrays", "Vecchia"]
 
 [compat]
@@ -25,9 +27,9 @@ Ipopt = "1.10.6"
 JuMP = "1.27.0"
 KernelAbstractions = "0.9.38"
 LinearAlgebra = "1.10"
-MadNLP = "0.9.1"
-MadNLPGPU = "0.8"
-MadNLPHSL = "0.7"
+MadNLP = "0.10"
+MadNLPGPU = "0.10"
+MadNLPHSL = "0.7.2"
 NLPModels = "0.21.9"
 NLPModelsIpopt = "0.11.1"
 NLPModelsJuMP = "0.13.5"

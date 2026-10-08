@@ -64,8 +64,11 @@ sim = cholesky(K).L * z
 
 # Now bring in some optimizers and fit the nonparametric model. This gives a U
 # such that Σ^{-1} ≈ U*U', where Σ is the covariance matrix for each column of sim.
+# The option `kkt_system=VecchiaKKTSystem` exploits the block structure of the KKT
+# systems: the Newton steps are computed with dense Cholesky factorizations of the
+# blocks of the Hessian, without any sparse linear solver.
 using MadNLP
-result = madnlp(nlp; tol=1e-10)
+result = madnlp(nlp; tol=1e-10, kkt_system=VecchiaKKTSystem)
 U      = UpperTriangular(recover_factor(nlp, result.solution))
 
 # KL divergence from the true covariance:

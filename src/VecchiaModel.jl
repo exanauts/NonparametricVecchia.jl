@@ -58,17 +58,21 @@ function VecchiaModel(I::Vector{Int}, J::Vector{Int}, samples::Matrix{T};
     lvar = fill!(S(undef, nvar), -Inf)
     uvar = fill!(S(undef, nvar),  Inf)
 
-    # Apply box constraints to the diagonal
+    # Apply box constraints to the diagonal of L through the variables w = log(diag(L)).
+    # Bounding w instead of the diagonal entries of L keeps the Hessian block of L
+    # independent of the iterate, which is exploited by `VecchiaKKTSystem`.
+    w_lvar = view(lvar, cache.nnzL+1:nvar)
+    w_uvar = view(uvar, cache.nnzL+1:nvar)
     if !isnothing(lvar_diag)
-        view(lvar, cache.diagL) .= lvar_diag
+        w_lvar .= log.(lvar_diag)
     else
-        view(lvar, cache.diagL) .= 1e-10
+        w_lvar .= log(T(1e-10))
     end
 
     if !isnothing(uvar_diag)
-        view(uvar, cache.diagL) .= uvar_diag
+        w_uvar .= log.(uvar_diag)
     else
-        view(uvar, cache.diagL) .= 1e10
+        w_uvar .= log(T(1e10))
     end
 
     view(x0, cache.diagL) .= 1.0
