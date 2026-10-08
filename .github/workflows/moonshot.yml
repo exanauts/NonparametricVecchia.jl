@@ -12,7 +12,7 @@ on:
 
 jobs:
   test-moonshot:
-    runs-on: moonshot
+    runs-on: [self-hosted, Linux, X64, gpu, cuda]
     strategy:
       matrix:
         os: [ubuntu-24.04]
@@ -35,7 +35,11 @@ jobs:
           using Pkg
           Pkg.activate(".")
           path_HSL_jll = "/scratch/github-actions/actions_runner_hsl/HSL_jll.jl.v" * ENV["HSL_VERSION"]
-          Pkg.develop(path=path_HSL_jll)
+          if isdir(path_HSL_jll)
+              Pkg.develop(path=path_HSL_jll)
+          else
+              @warn "HSL_jll.jl not found at $path_HSL_jll, the tests with HSL are skipped."
+          end
       - name: Test NonparametricVecchia.jl
         shell: julia --color=yes {0}
         run: |
