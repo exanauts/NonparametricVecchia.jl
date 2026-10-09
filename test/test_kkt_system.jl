@@ -1,3 +1,22 @@
+# Allocations of the operations of VecchiaKKTSystem.
+# The measurements are done in a function to avoid the allocations of closures
+# capturing local variables, which happen with Julia 1.10.
+function vecchia_kkt_allocations(kkt, b, w, y, Jty, t, Ht)
+    ls = kkt.linear_solver
+    allocs = Dict{Symbol, Int}()
+    for _ in 1:2  # the first pass compiles the functions
+        allocs[:factorize_reuse] = @allocated MadNLP.factorize!(ls)
+        fill!(ls.hess_copy, NaN)  # forces the refactorization of all blocks
+        allocs[:factorize_all] = @allocated MadNLP.factorize!(ls)
+        copyto!(MadNLP.full(w), MadNLP.full(b))
+        allocs[:solve_kkt] = @allocated MadNLP.solve_kkt!(kkt, w)
+        allocs[:mul] = @allocated mul!(w, kkt, b, -1.0, 1.0)
+        allocs[:jtprod] = @allocated MadNLP.jtprod!(Jty, kkt, y)
+        allocs[:mul_hess_blk] = @allocated MadNLP.mul_hess_blk!(Ht, kkt, t)
+    end
+    return allocs
+end
+
 @testset "VecchiaKKTSystem" begin
     samples = gensamples(100, 75)
 
@@ -75,6 +94,29 @@
         res = madnlp(nlp; kkt_system=VecchiaKKTSystem, print_level=MadNLP.ERROR)
         @test res.status == ref.status
         @test res.objective ≈ ref.objective rtol=1e-6
+    end
+
+    @testset "Allocations -- uplo = $uplo" for (uplo, pattern) in ((:U, banded_U(100, 5)), (:L, banded_L(100, 5)))
+        nlp = VecchiaModel(pattern, samples; lambda=1e-2)
+        solver = MadNLPSolver(nlp; kkt_system=VecchiaKKTSystem, print_level=MadNLP.ERROR)
+        MadNLP.solve!(solver)
+        kkt = solver.kkt
+        ls = kkt.linear_solver
+        nvar, ncon = nlp.meta.nvar, nlp.meta.ncon
+
+        rng = StableRNG(2026)
+        b = MadNLP.UnreducedKKTVector(kkt)
+        randn!(rng, MadNLP.full(b))
+        w = copy(b)
+        y = randn(rng, ncon)
+        Jty = zeros(nvar)
+        t = randn(rng, nvar)
+        Ht = zeros(nvar)
+
+        allocs = vecchia_kkt_allocations(kkt, b, w, y, Jty, t, Ht)
+        for (name, bytes) in pairs(allocs)
+            @test (name, bytes) == (name, 0)
+        end
     end
 
     @testset "Active bounds" begin

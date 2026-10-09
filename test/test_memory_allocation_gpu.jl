@@ -197,4 +197,9 @@ end
     @test mems[:jac_coord!] == 0.0
     @test mems[:hess_coord!] == 0.0
     @test mems[:hess_lag_coord!] == 0.0
+    @test mems[:hprod!] == 0.0
+    @test mems[:hprod_lag!] == 0.0
+    # Same allocation as cons!: broadcast with a view indexed by a CuVector
+    @test_broken mems[:jprod!] == 0.0
+    @test_broken mems[:jtprod!] == 0.0
 end
