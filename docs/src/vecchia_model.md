@@ -9,56 +9,67 @@ It is built from two ingredients:
 - a matrix of samples of size `m × n`, with one replicate per row.
 
 The model is an `AbstractNLPModel` of [NLPModels.jl](https://github.com/JuliaSmoothOptimizers/NLPModels.jl),
-so it can be solved with any compatible solver, such as Ipopt, MadNLP or Uno.
+so it can be solved with any compatible solver, such as MadNLP, Ipopt or Uno.
 The factor is then recovered from the solution with [`recover_factor`](@ref).
 
-## Lower triangular factor
+## Sparsity pattern and samples
 
-The sparsity pattern can be given in COO format, with the row and column indices of its nonzeros.
-Here, the pattern is the full lower triangle, and the problem is solved with Ipopt.
+As a first example, we consider `n` points on a line with an exponential covariance
+function, and a banded sparsity pattern: each column of the factor involves the `k`
+previous points. The samples are stored in a matrix of size `m × n`, with one replicate per row.
 
-```@example VecchiaModel_L
+```@example basics
 using NonparametricVecchia
 using LinearAlgebra
 using SparseArrays
-using NLPModelsIpopt
 
-n = 40
-number_of_samples = 100
-samples = randn(number_of_samples, n)
+n, k, m = 200, 5, 100
+K = [exp(-abs(i - j) / 10) for i in 1:n, j in 1:n]  # covariance matrix
+samples = Matrix((cholesky(K).L * randn(n, m))')     # one replicate per row
 
-P = ones(n, n)
-P = tril(P)
-P = sparse(P)
-I, J, V = findnz(P)
-nlp_L = VecchiaModel(I, J, samples; format=:coo, uplo=:L)
-output = ipopt(nlp_L)
-L = recover_factor(nlp_L, output.solution)
+pattern = LowerTriangular(spdiagm([-j => trues(n - j) for j in 0:k]...))
+nlp = VecchiaModel(pattern, samples)
+nothing # hide
 ```
 
-## Upper triangular factor
+The same model can be built from the row and column indices of the nonzeros (COO format),
+and an upper triangular factor is obtained with an `UpperTriangular` pattern or with `uplo=:U`.
+For an upper triangular factor, the diagonal entry of each column is its last nonzero instead of its first one.
 
-With `uplo=:U`, the factor is upper triangular.
-The diagonal entry of each column is then its last nonzero instead of its first one.
+```@example basics
+rows, cols, _ = findnz(pattern.data)
+nlp_coo = VecchiaModel(rows, cols, samples; format=:coo, uplo=:L)
 
-```@example VecchiaModel_U
-using NonparametricVecchia
-using LinearAlgebra
-using SparseArrays
-using NLPModelsIpopt
-
-n = 40
-number_of_samples = 100
-samples = randn(number_of_samples, n)
-
-P = ones(n, n)
-P = triu(P)
-P = sparse(P)
-I, J, V = findnz(P)
-nlp_U = VecchiaModel(I, J, samples; format=:coo, uplo=:U)
-output = ipopt(nlp_U)
-U = recover_factor(nlp_U, output.solution)
+pattern_U = UpperTriangular(sparse(pattern.data'))
+nlp_U = VecchiaModel(pattern_U, samples)
+nothing # hide
 ```
+
+The model is solved with MadNLP and [`VecchiaKKTSystem`](@ref), and the factor is recovered with [`recover_factor`](@ref):
+
+```@example basics
+using MadNLP
+
+result = madnlp(nlp; kkt_system=VecchiaKKTSystem, print_level=MadNLP.ERROR)
+L = recover_factor(nlp, result.solution)
+result.status
+```
+
+Since `L * L'` approximates the inverse of `K`, the product `L' * K * L` approximates the identity.
+The relative error decreases as the number of replicates increases:
+
+```@example basics
+for m in (100, 1_000, 10_000)
+    samples_m = Matrix((cholesky(K).L * randn(n, m))')
+    nlp_m = VecchiaModel(pattern, samples_m)
+    result_m = madnlp(nlp_m; kkt_system=VecchiaKKTSystem, print_level=MadNLP.ERROR)
+    L_m = recover_factor(nlp_m, result_m.solution)
+    println("m = ", m, ": ", norm(L_m' * K * L_m - I) / sqrt(n))
+end
+```
+
+Any other solver of the JuliaSmoothOptimizers ecosystem can be used as well, for instance
+Ipopt with `using NLPModelsIpopt; ipopt(nlp)`, or Uno with `using UnoSolver; uno(nlp)`.
 
 ## Sparsity pattern from Vecchia.jl
 
