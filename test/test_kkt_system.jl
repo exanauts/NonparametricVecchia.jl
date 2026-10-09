@@ -115,7 +115,7 @@ end
 
         allocs = vecchia_kkt_allocations(kkt, b, w, y, Jty, t, Ht)
         for (name, bytes) in pairs(allocs)
-            @test bytes == 0
+            @test (name, bytes) == (name, 0)
         end
     end
 
