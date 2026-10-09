@@ -63,7 +63,7 @@ them positive definite, so that they are factorized only once.
 
 ### GPU support
 
-NVIDIA and AMD GPUs are supported through [CUDA.jl](https://github.com/JuliaGPU/CUDA.jl) (v6)
+NVIDIA and AMD GPUs are supported through [CUDA.jl](https://github.com/JuliaGPU/CUDA.jl)
 and [AMDGPU.jl](https://github.com/JuliaGPU/AMDGPU.jl).
 When the samples are stored in a `CuMatrix` or a `ROCMatrix`, the model is built on the GPU,
 and `VecchiaKKTSystem` performs the factorizations and the solves with GPU kernels:

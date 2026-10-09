@@ -11,7 +11,7 @@ The estimation problem is solved with interior-point methods, and its structure 
 
 - `VecchiaModel`: the maximum likelihood estimation problem as an [NLPModels.jl](https://github.com/JuliaSmoothOptimizers/NLPModels.jl) model, which can be solved with MadNLP, Ipopt, Uno, ...
 - `VecchiaKKTSystem`: a structure-exploiting KKT system for [MadNLP.jl](https://github.com/madsuite-org/MadNLP.jl), which solves the Newton systems with dense block Cholesky factorizations instead of a sparse linear solver.
-- GPU support for NVIDIA and AMD GPUs through [CUDA.jl](https://github.com/JuliaGPU/CUDA.jl) (v6) and [AMDGPU.jl](https://github.com/JuliaGPU/AMDGPU.jl): the model and `VecchiaKKTSystem` run entirely on the GPU.
+- GPU support for NVIDIA and AMD GPUs through [CUDA.jl](https://github.com/JuliaGPU/CUDA.jl) and [AMDGPU.jl](https://github.com/JuliaGPU/AMDGPU.jl): the model and `VecchiaKKTSystem` run entirely on the GPU.
 - Integration with [Vecchia.jl](https://github.com/cgeoga/Vecchia.jl) to choose the ordering and the conditioning sets.
 
 ## Installation

@@ -46,7 +46,7 @@ norm(result_default.solution - result_vecchia.solution, Inf)
 
 ## Usage on GPU
 
-`VecchiaKKTSystem` also runs on NVIDIA GPUs with [CUDA.jl](https://github.com/JuliaGPU/CUDA.jl) (v6)
+`VecchiaKKTSystem` also runs on NVIDIA GPUs with [CUDA.jl](https://github.com/JuliaGPU/CUDA.jl)
 and on AMD GPUs with [AMDGPU.jl](https://github.com/JuliaGPU/AMDGPU.jl).
 The factorizations and the solves with the blocks `Hⱼ` are performed by GPU kernels written with
 [KernelAbstractions.jl](https://github.com/JuliaGPU/KernelAbstractions.jl), one block per thread,
