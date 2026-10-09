@@ -10,7 +10,7 @@ pattern = LowerTriangular(spdiagm([-j =&gt; trues(n - j) for j in 0:k]...))
 nlp = VecchiaModel(pattern, samples)
 
 result = madnlp(nlp; kkt_system=VecchiaKKTSystem)
-L = recover_factor(nlp, result.solution)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">This is <span class="sgr34">Mad</span><span class="sgr31">N</span><span class="sgr32">L</span><span class="sgr35">P</span> version v0.10.1, running with VecchiaBlockSolver (block Cholesky)
+T = recover_factor(nlp, result.solution)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">This is <span class="sgr34">Mad</span><span class="sgr31">N</span><span class="sgr32">L</span><span class="sgr35">P</span> version v0.10.1, running with VecchiaBlockSolver (block Cholesky)
 
 Number of nonzeros in constraint Jacobian............:     1000
 Number of nonzeros in Lagrangian Hessian.............:    33060
@@ -26,46 +26,47 @@ Total number of inequality constraints...............:        0
         inequality constraints with only upper bounds:        0
 
 iter    objective    inf_pr   inf_du inf_compl lg(mu) lg(rg) alpha_pr ir ls
-   0  5.0337519e+04 0.00e+00 2.26e+01 2.30e+01  -1.0     -   0.00e+00  1  0
-   1  4.7368486e+04 2.08e-02 7.84e-01 6.14e-01  -1.0     -   1.00e+00  1  1f
-   2  4.7523986e+04 1.11e-04 3.52e-03 2.02e-02  -1.7     -   1.00e+00  1  1h
-   3  4.7524232e+04 2.75e-09 7.00e-08 1.50e-04  -3.8     -   1.00e+00  1  1h
-   4  4.7524232e+04 2.22e-16 4.26e-14 2.51e-09  -8.6     -   1.00e+00  1  1h
+   0  5.0228186e+04 0.00e+00 2.02e+01 2.30e+01  -1.0     -   0.00e+00  1  0
+   1  4.7265726e+04 2.95e-02 1.08e+00 6.83e-01  -1.0     -   1.00e+00  1  1f
+   2  4.7432801e+04 2.14e-04 6.10e-03 1.00e-01  -1.0     -   1.00e+00  1  1h
+   3  4.7433086e+04 9.74e-09 1.50e-07 2.83e-03  -2.5     -   1.00e+00  1  1h
+   4  4.7433086e+04 2.22e-16 4.26e-14 1.84e-06  -5.7     -   1.00e+00  1  1h
+   5  4.7433086e+04 2.22e-16 4.26e-14 9.09e-10  -9.0     -   1.00e+00  1  1h
 
-Number of Iterations....: 4
+Number of Iterations....: 5
 
                                    (scaled)                 (unscaled)
-Objective...............:   1.8221292740711506e+04    4.7524232446262919e+04
-Dual infeasibility......:   4.2632564145606011e-14    1.1119298268608356e-13
+Objective...............:   1.8357378262716509e+04    4.7433086303393517e+04
+Dual infeasibility......:   4.2632564145606011e-14    1.1015702054582208e-13
 Constraint violation....:   2.2204460492503131e-16    2.2204460492503131e-16
-Complementarity.........:   9.6079265148248422e-10    2.5059107469194796e-09
-Overall NLP error.......:   2.5059107469194796e-09    2.5059107469194796e-09
+Complementarity.........:   3.5183301379475137e-10    9.0909090987156742e-10
+Overall NLP error.......:   9.0909090987156742e-10    9.0909090987156742e-10
 
-Number of objective function evaluations              = 5
-Number of objective gradient evaluations              = 5
-Number of constraint evaluations                      = 5
-Number of constraint Jacobian evaluations             = 5
-Number of Lagrangian Hessian evaluations              = 4
-Number of KKT factorizations                          = 5
-Number of KKT backsolves                              = 5
+Number of objective function evaluations              = 6
+Number of objective gradient evaluations              = 6
+Number of constraint evaluations                      = 6
+Number of constraint Jacobian evaluations             = 6
+Number of Lagrangian Hessian evaluations              = 5
+Number of KKT factorizations                          = 6
+Number of KKT backsolves                              = 6
 
-Total wall secs in initialization                     =  1.243 s
+Total wall secs in initialization                     =  1.688 s
 Total wall secs in linear solver                      =  0.002 s
-Total wall secs in NLP function evaluations           =  0.000 s
-Total wall secs in solver (w/o init./fun./lin. alg.)  =  6.066 s
-Total wall secs                                       =  7.311 s
+Total wall secs in NLP function evaluations           =  0.001 s
+Total wall secs in solver (w/o init./fun./lin. alg.)  =  7.596 s
+Total wall secs                                       =  9.288 s
 
 <span class="sgr32">EXIT: Optimal Solution Found (tol = 1.0e-08).</span></code></pre><p>The solution is the same as the one computed with the default KKT system of MadNLP and a sparse linear solver, but the Newton steps are much cheaper:</p><pre><code class="language-julia hljs">result_default = madnlp(nlp; print_level=MadNLP.ERROR)
 result_vecchia = madnlp(nlp; kkt_system=VecchiaKKTSystem, print_level=MadNLP.ERROR)
-norm(result_default.solution - result_vecchia.solution, Inf)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">2.706168622523819e-16</code></pre><h2 id="Usage-on-GPU"><a class="docs-heading-anchor" href="#Usage-on-GPU">Usage on GPU</a><a id="Usage-on-GPU-1"></a><a class="docs-heading-anchor-permalink" href="#Usage-on-GPU" title="Permalink"></a></h2><p><code>VecchiaKKTSystem</code> also runs on NVIDIA GPUs with <a href="https://github.com/JuliaGPU/CUDA.jl">CUDA.jl</a> (v6) and on AMD GPUs with <a href="https://github.com/JuliaGPU/AMDGPU.jl">AMDGPU.jl</a>. The factorizations and the solves with the blocks <code>Hⱼ</code> are performed by GPU kernels written with <a href="https://github.com/JuliaGPU/KernelAbstractions.jl">KernelAbstractions.jl</a>, one block per thread, and the model itself (objective, gradient, Hessian) is evaluated on the GPU. It suffices to store the samples in a <code>CuMatrix</code> or a <code>ROCMatrix</code>, and to load <a href="https://github.com/madsuite-org/MadNLP.jl/tree/master/lib/MadNLPGPU">MadNLPGPU.jl</a>:</p><pre><code class="language-julia hljs">using CUDA, MadNLPGPU
+norm(result_default.solution - result_vecchia.solution, Inf)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">2.7755575615628914e-16</code></pre><h2 id="Usage-on-GPU"><a class="docs-heading-anchor" href="#Usage-on-GPU">Usage on GPU</a><a id="Usage-on-GPU-1"></a><a class="docs-heading-anchor-permalink" href="#Usage-on-GPU" title="Permalink"></a></h2><p><code>VecchiaKKTSystem</code> also runs on NVIDIA GPUs with <a href="https://github.com/JuliaGPU/CUDA.jl">CUDA.jl</a> (v6) and on AMD GPUs with <a href="https://github.com/JuliaGPU/AMDGPU.jl">AMDGPU.jl</a>. The factorizations and the solves with the blocks <code>Hⱼ</code> are performed by GPU kernels written with <a href="https://github.com/JuliaGPU/KernelAbstractions.jl">KernelAbstractions.jl</a>, one block per thread, and the model itself (objective, gradient, Hessian) is evaluated on the GPU. It suffices to store the samples in a <code>CuMatrix</code> or a <code>ROCMatrix</code>, and to load <a href="https://github.com/madsuite-org/MadNLP.jl/tree/master/lib/MadNLPGPU">MadNLPGPU.jl</a>:</p><pre><code class="language-julia hljs">using CUDA, MadNLPGPU
 
 nlp = VecchiaModel(pattern, CuMatrix(samples))
 result = madnlp(nlp; kkt_system=VecchiaKKTSystem)
-L = recover_factor(nlp, result.solution)  # CuSparseMatrixCSC</code></pre><pre><code class="language-julia hljs">using AMDGPU, MadNLPGPU
+T = recover_factor(nlp, result.solution)  # CuSparseMatrixCSC</code></pre><pre><code class="language-julia hljs">using AMDGPU, MadNLPGPU
 
 nlp = VecchiaModel(pattern, ROCMatrix(samples))
 result = madnlp(nlp; kkt_system=VecchiaKKTSystem)
-L = recover_factor(nlp, result.solution)  # ROCSparseMatrixCSC</code></pre><h2 id="Bounds-and-regularization"><a class="docs-heading-anchor" href="#Bounds-and-regularization">Bounds and regularization</a><a id="Bounds-and-regularization-1"></a><a class="docs-heading-anchor-permalink" href="#Bounds-and-regularization" title="Permalink"></a></h2><p>The keyword arguments <code>lvar_diag</code> and <code>uvar_diag</code> of <a href="../reference/#NonparametricVecchia.VecchiaModel-Union{Tuple{T}, Tuple{Vector{Int64}, Vector{Int64}, Matrix{T}}} where T"><code>VecchiaModel</code></a> bound the diagonal entries of the factor. They are imposed on the variables <code>w = log(diag(L))</code>, so that the blocks <code>Hⱼ</code> remain independent of the iterate.</p><p>If the number of replicates <code>m</code> is smaller than the number of nonzeros in a column of the factor, the corresponding block <code>Hⱼ</code> is singular. MadNLP then regularizes the KKT system at every iteration, and the blocks have to be refactorized each time. A small ridge penalty, set with the keyword <code>lambda</code>, makes all blocks positive definite:</p><pre><code class="language-julia hljs">samples_small = randn(5, n)  # only 5 replicates for 11 nonzeros per column
+T = recover_factor(nlp, result.solution)  # ROCSparseMatrixCSC</code></pre><h2 id="Bounds-and-regularization"><a class="docs-heading-anchor" href="#Bounds-and-regularization">Bounds and regularization</a><a id="Bounds-and-regularization-1"></a><a class="docs-heading-anchor-permalink" href="#Bounds-and-regularization" title="Permalink"></a></h2><p>The keyword arguments <code>lvar_diag</code> and <code>uvar_diag</code> of <a href="../reference/#NonparametricVecchia.VecchiaModel-Union{Tuple{T}, Tuple{Vector{Int64}, Vector{Int64}, Matrix{T}}} where T"><code>VecchiaModel</code></a> bound the diagonal entries of the factor. They are imposed on the variables <code>w = log(diag(T))</code>, so that the blocks <code>Hⱼ</code> remain independent of the iterate.</p><p>If the number of replicates <code>m</code> is smaller than the number of nonzeros in a column of the factor, the corresponding block <code>Hⱼ</code> is singular. MadNLP then regularizes the KKT system at every iteration, and the blocks have to be refactorized each time. A small ridge penalty, set with the keyword <code>lambda</code>, makes all blocks positive definite:</p><pre><code class="language-julia hljs">samples_small = randn(5, n)  # only 5 replicates for 11 nonzeros per column
 nlp_small = VecchiaModel(pattern, samples_small; lambda=1e-2)
 result_small = madnlp(nlp_small; kkt_system=VecchiaKKTSystem, print_level=MadNLP.ERROR)
-result_small.status</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">SOLVE_SUCCEEDED::Status = 1</code></pre><h2 id="Limitations"><a class="docs-heading-anchor" href="#Limitations">Limitations</a><a id="Limitations-1"></a><a class="docs-heading-anchor-permalink" href="#Limitations" title="Permalink"></a></h2><ul><li><code>VecchiaKKTSystem</code> only supports a <code>VecchiaModel</code> solved with the exact Hessian (no quasi-Newton approximation).</li><li>The bounds on the diagonal entries must satisfy <code>lvar_diag &lt; uvar_diag</code> (fixed variables are not supported).</li></ul></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../vecchia_model/">« Building and solving a <code>VecchiaModel</code></a><a class="docs-footer-nextpage" href="../reference/">Reference »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.19.0 on <span class="colophon-date" title="Friday 9 October 2026 04:04">Friday 9 October 2026</span>. Using Julia version 1.13.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+result_small.status</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">SOLVE_SUCCEEDED::Status = 1</code></pre><h2 id="Limitations"><a class="docs-heading-anchor" href="#Limitations">Limitations</a><a id="Limitations-1"></a><a class="docs-heading-anchor-permalink" href="#Limitations" title="Permalink"></a></h2><ul><li><code>VecchiaKKTSystem</code> only supports a <code>VecchiaModel</code> solved with the exact Hessian (no quasi-Newton approximation).</li><li>The bounds on the diagonal entries must satisfy <code>lvar_diag &lt; uvar_diag</code> (fixed variables are not supported).</li></ul></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../vecchia_model/">« Building and solving a <code>VecchiaModel</code></a><a class="docs-footer-nextpage" href="../reference/">Reference »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.19.0 on <span class="colophon-date" title="Friday 9 October 2026 04:23">Friday 9 October 2026</span>. Using Julia version 1.13.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
