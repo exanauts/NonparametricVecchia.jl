@@ -1,40 +1,84 @@
-```@example VecchiaModel_L
+# Building and solving a `VecchiaModel`
+
+A [`VecchiaModel`](@ref) is the maximum likelihood estimation problem whose solution is a sparse
+triangular factor `T` such that `T * T'` approximates the inverse of the covariance matrix of the samples.
+It is built from two ingredients:
+
+- the sparsity pattern of the factor, given as a `LowerTriangular` or `UpperTriangular` sparse matrix,
+  or as row and column indices;
+- a matrix of samples of size `m × n`, with one replicate per row.
+
+The model is an `AbstractNLPModel` of [NLPModels.jl](https://github.com/JuliaSmoothOptimizers/NLPModels.jl),
+so it can be solved with any compatible solver, such as MadNLP, Ipopt or Uno.
+The factor is then recovered from the solution with [`recover_factor`](@ref).
+
+## Sparsity pattern and samples
+
+As a first example, we consider `n` points on a line with an exponential covariance
+function, and a banded sparsity pattern: each column of the factor involves the `k`
+previous points. The samples are stored in a matrix of size `m × n`, with one replicate per row.
+
+```@example basics
 using NonparametricVecchia
 using LinearAlgebra
 using SparseArrays
-using NLPModelsIpopt
 
-n = 40
-number_of_samples = 100
-samples = randn(number_of_samples, n)
+n, k, m = 200, 5, 100
+K = [exp(-abs(i - j) / 10) for i in 1:n, j in 1:n]  # covariance matrix
+samples = Matrix((cholesky(K).L * randn(n, m))')     # one replicate per row
 
-P = ones(n, n)
-P = tril(P)
-P = sparse(P)
-I, J, V = findnz(P)
-nlp_L = VecchiaModel(I, J, samples; format=:coo, uplo=:L)
-output = ipopt(nlp_L)
-L = recover_factor(nlp_L, output.solution)
+pattern = LowerTriangular(spdiagm([-j => trues(n - j) for j in 0:k]...))
+nlp = VecchiaModel(pattern, samples)
+nothing # hide
 ```
 
-```@example VecchiaModel_U
-using NonparametricVecchia
-using LinearAlgebra
-using SparseArrays
-using NLPModelsIpopt
+The same model can be built from the row and column indices of the nonzeros (COO format),
+and an upper triangular factor is obtained with an `UpperTriangular` pattern or with `uplo=:U`.
+For an upper triangular factor, the diagonal entry of each column is its last nonzero instead of its first one.
 
-n = 40
-number_of_samples = 100
-samples = randn(number_of_samples, n)
+```@example basics
+rows, cols, _ = findnz(pattern.data)
+nlp_coo = VecchiaModel(rows, cols, samples; format=:coo, uplo=:L)
 
-P = ones(n, n)
-P = triu(P)
-P = sparse(P)
-I, J, V = findnz(P)
-nlp_U = VecchiaModel(I, J, samples; format=:coo, uplo=:U)
-output = ipopt(nlp_U)
-U = recover_factor(nlp_U, output.solution)
+pattern_U = UpperTriangular(sparse(pattern.data'))
+nlp_U = VecchiaModel(pattern_U, samples)
+nothing # hide
 ```
+
+The model is solved with MadNLP and [`VecchiaKKTSystem`](@ref), and the factor `T` is recovered with [`recover_factor`](@ref):
+
+```@example basics
+using MadNLP
+
+result = madnlp(nlp; kkt_system=VecchiaKKTSystem, print_level=MadNLP.ERROR)
+T = recover_factor(nlp, result.solution)
+result.status
+```
+
+Since `T * T'` approximates the inverse of `K`, the product `T' * K * T` approximates the identity.
+The relative error decreases as the number of replicates increases:
+
+```@example basics
+for m in (100, 1_000, 10_000)
+    samples_m = Matrix((cholesky(K).L * randn(n, m))')
+    nlp_m = VecchiaModel(pattern, samples_m)
+    result_m = madnlp(nlp_m; kkt_system=VecchiaKKTSystem, print_level=MadNLP.ERROR)
+    T_m = recover_factor(nlp_m, result_m.solution)
+    println("m = ", m, ": ", norm(T_m' * K * T_m - I) / sqrt(n))
+end
+```
+
+Any other solver of the JuliaSmoothOptimizers ecosystem can be used as well, for instance
+Ipopt with `using NLPModelsIpopt; ipopt(nlp)`, or Uno with `using UnoSolver; uno(nlp)`.
+
+## Sparsity pattern from Vecchia.jl
+
+In practice, the sparsity pattern of the factor comes from the Vecchia approximation:
+the nonzeros of each column correspond to a small set of conditioning points.
+With [Vecchia.jl](https://github.com/cgeoga/Vecchia.jl), a `VecchiaModel` can be built
+directly from the locations of the observations, an ordering, and a design of the
+conditioning sets. Following the conventions of Vecchia.jl, the data are then given with one
+replicate per column. The model is solved with MadNLP and [`VecchiaKKTSystem`](@ref).
 
 ```@example Vecchia
 using NonparametricVecchia

@@ -31,7 +31,7 @@ pattern = LowerTriangular(spdiagm([-j => trues(n - j) for j in 0:k]...))
 nlp = VecchiaModel(pattern, samples)
 
 result = madnlp(nlp; kkt_system=VecchiaKKTSystem)
-L = recover_factor(nlp, result.solution)
+T = recover_factor(nlp, result.solution)
 nothing # hide
 ```
 
@@ -59,7 +59,7 @@ using CUDA, MadNLPGPU
 
 nlp = VecchiaModel(pattern, CuMatrix(samples))
 result = madnlp(nlp; kkt_system=VecchiaKKTSystem)
-L = recover_factor(nlp, result.solution)  # CuSparseMatrixCSC
+T = recover_factor(nlp, result.solution)  # CuSparseMatrixCSC
 ```
 
 ```julia
@@ -67,13 +67,13 @@ using AMDGPU, MadNLPGPU
 
 nlp = VecchiaModel(pattern, ROCMatrix(samples))
 result = madnlp(nlp; kkt_system=VecchiaKKTSystem)
-L = recover_factor(nlp, result.solution)  # ROCSparseMatrixCSC
+T = recover_factor(nlp, result.solution)  # ROCSparseMatrixCSC
 ```
 
 ## Bounds and regularization
 
 The keyword arguments `lvar_diag` and `uvar_diag` of [`VecchiaModel`](@ref) bound the
-diagonal entries of the factor. They are imposed on the variables `w = log(diag(L))`,
+diagonal entries of the factor. They are imposed on the variables `w = log(diag(T))`,
 so that the blocks `Hⱼ` remain independent of the iterate.
 
 If the number of replicates `m` is smaller than the number of nonzeros in a column of

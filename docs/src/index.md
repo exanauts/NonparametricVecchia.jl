@@ -2,8 +2,10 @@
 
 ## Overview
 
-This package computes an approximate Cholesky factorization of a covariance matrix using a Maximum Likelihood Estimation (MLE) approach.
-The Cholesky factor is computed via the Vecchia approximation, which is sparse and approximately banded, making it highly efficient for large-scale problems.
+This package estimates the covariance structure of a Gaussian random field from i.i.d. replicates, without assuming a parametric covariance function.
+It computes a sparse triangular factor `T` such that `T * T'` approximates the inverse of the covariance matrix, by maximum likelihood estimation.
+The sparsity pattern of `T` is chosen a priori, typically from Vecchia's approximation, where each column only involves a small set of conditioning points.
+The estimation problem is solved with interior-point methods, and its structure makes it highly efficient for large-scale problems, on CPUs and GPUs.
 
 ## Features
 
