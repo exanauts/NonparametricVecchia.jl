@@ -1,5 +1,5 @@
 function vecchia_mul!(y::Vector{T}, B::Vector{Matrix{T}}, hess_obj_vals::Vector{T},
-                      x::Vector{T}, n::Int, m::Vector{Int}, offsets::Vector{Int}) where T <: AbstractFloat
+                      x::Vector{T}, n::Int, m::Vector{Int}, offsets::Vector{Int}, hoffsets::Vector{Int}) where T <: AbstractFloat
     pos = 0
     for j = 1:n
         Bj = B[j]
@@ -12,7 +12,7 @@ function vecchia_mul!(y::Vector{T}, B::Vector{Matrix{T}}, hess_obj_vals::Vector{
 end
 
 function vecchia_build_B!(B::Vector{Matrix{T}}, samples::Matrix{T}, lambda::T, rowsL::Vector{Int},
-                          colptrL::Vector{Int}, hess_obj_vals::Vector{T}, n::Int, m::Vector{Int}) where T <: AbstractFloat
+                          colptrL::Vector{Int}, hess_obj_vals::Vector{T}, n::Int, m::Vector{Int}, hoffsets::Vector{Int}) where T <: AbstractFloat
     pos = 0
     for j in 1:n
         for s in 1:m[j]
@@ -37,7 +37,7 @@ function vecchia_build_B!(B::Vector{Matrix{T}}, samples::Matrix{T}, lambda::T, r
     return nothing
 end
 
-function vecchia_generate_hess_tri_structure!(n::Int, m::Vector{Int}, nnzL::Int, nnzh_tri_obj::Int, offsets::Vector{Int}, hrows::Vector{T}, hcols::Vector{T}) where T <: Integer
+function vecchia_generate_hess_tri_structure!(n::Int, m::Vector{Int}, nnzL::Int, nnzh_tri_obj::Int, offsets::Vector{Int}, hoffsets::Vector{Int}, hrows::Vector{T}, hcols::Vector{T}) where T <: Integer
     pos = 0
     offset = 0
     for j in 1:n
@@ -74,7 +74,7 @@ function NLPModels.obj(nlp::VecchiaModel, x::AbstractVector)
 
     # n is the number of blocks Bj in B
     # m is a vector of length n that gives the dimensions of each block Bj
-    vecchia_mul!(nlp.cache.buffer, nlp.cache.B, nlp.cache.hess_obj_vals, x, nlp.cache.n, nlp.cache.m, nlp.cache.offsets)
+    vecchia_mul!(nlp.cache.buffer, nlp.cache.B, nlp.cache.hess_obj_vals, x, nlp.cache.n, nlp.cache.m, nlp.cache.offsets, nlp.cache.hoffsets)
     y = view(x, 1:nlp.cache.nnzL)
     t2 = dot(nlp.cache.buffer, y)
 
@@ -88,7 +88,7 @@ function NLPModels.grad!(nlp::VecchiaModel, x::AbstractVector, gx::AbstractVecto
     
     # n is the number of blocks Bj in B
     # m is a vector of length n that gives the dimensions of each block Bj
-    vecchia_mul!(gx, nlp.cache.B, nlp.cache.hess_obj_vals, x, nlp.cache.n, nlp.cache.m, nlp.cache.offsets)
+    vecchia_mul!(gx, nlp.cache.B, nlp.cache.hess_obj_vals, x, nlp.cache.n, nlp.cache.m, nlp.cache.offsets, nlp.cache.hoffsets)
     gx_z = view(gx, nlp.cache.nnzL+1:nlp.meta.nvar)
     gx_z .= .- nlp.cache.M
     return gx
@@ -101,7 +101,7 @@ function NLPModels.hess_structure!(nlp::VecchiaModel, hrows::AbstractVector, hco
     @lencheck nlp.meta.nnzh hcols
 
     # stored as lower triangular!
-    vecchia_generate_hess_tri_structure!(nlp.cache.n, nlp.cache.m, nlp.cache.nnzL, nlp.cache.nnzh_tri_obj, nlp.cache.offsets, hrows, hcols)
+    vecchia_generate_hess_tri_structure!(nlp.cache.n, nlp.cache.m, nlp.cache.nnzL, nlp.cache.nnzh_tri_obj, nlp.cache.offsets, nlp.cache.hoffsets, hrows, hcols)
     return hrows, hcols
 end
 
@@ -134,7 +134,7 @@ function NLPModels.hprod!(nlp::VecchiaModel, x::AbstractVector, v::AbstractVecto
     
     # n is the number of blocks Bj in B
     # m is a vector of length n that gives the dimensions of each block Bj
-    vecchia_mul!(Hv, nlp.cache.B, nlp.cache.hess_obj_vals, v, nlp.cache.n, nlp.cache.m, nlp.cache.offsets)
+    vecchia_mul!(Hv, nlp.cache.B, nlp.cache.hess_obj_vals, v, nlp.cache.n, nlp.cache.m, nlp.cache.offsets, nlp.cache.hoffsets)
     view(Hv, 1:nlp.cache.nnzL) .*= obj_weight
     return Hv
 end
@@ -146,7 +146,7 @@ function NLPModels.hprod!(nlp::VecchiaModel, x::AbstractVector, y::AbstractVecto
     
     # n is the number of blocks Bj in B
     # m is a vector of length n that gives the dimensions of each block Bj
-    vecchia_mul!(Hv, nlp.cache.B, nlp.cache.hess_obj_vals, v, nlp.cache.n, nlp.cache.m, nlp.cache.offsets)
+    vecchia_mul!(Hv, nlp.cache.B, nlp.cache.hess_obj_vals, v, nlp.cache.n, nlp.cache.m, nlp.cache.offsets, nlp.cache.hoffsets)
     view(Hv, 1:nlp.cache.nnzL) .*= obj_weight
 
     z = view(x, nlp.cache.nnzL+1:nlp.meta.nvar)

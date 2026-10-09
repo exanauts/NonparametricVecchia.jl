@@ -89,7 +89,9 @@ function create_vecchia_cache_gpu(I::Vector{Int}, J::Vector{Int}, samples::Abstr
     nnzh_tri_obj = sum(m[j] * (m[j] + 1) for j in 1:n) ÷ 2
     nnzh_tri_lag = nnzh_tri_obj + n
 
-    offsets = cumsum([0; m[1:end-1]]) |> to_device
+    offsets, hoffsets = vecchia_block_offsets(m)
+    offsets = to_device(offsets)
+    hoffsets = to_device(hoffsets)
     B = [similar(samples, T, 0, 0)]
 
     rowsL = to_device(rowsL)
@@ -97,7 +99,7 @@ function create_vecchia_cache_gpu(I::Vector{Int}, J::Vector{Int}, samples::Abstr
     m = to_device(m)
 
     hess_obj_vals = S(undef, nnzh_tri_obj)
-    vecchia_build_B!(B, samples, lambda, rowsL, colptrL, hess_obj_vals, n, m)
+    vecchia_build_B!(B, samples, lambda, rowsL, colptrL, hess_obj_vals, n, m, hoffsets)
 
     if uplo == :L
         diagL = colptrL[1:n]
@@ -112,7 +114,7 @@ function create_vecchia_cache_gpu(I::Vector{Int}, J::Vector{Int}, samples::Abstr
     return VecchiaCache{eltype(S), S, typeof(rowsL), typeof(B[1])}(
         n, Msamples, nnzL,
         colptrL, rowsL, diagL,
-        m, offsets, B, nnzh_tri_obj,
+        m, offsets, hoffsets, B, nnzh_tri_obj,
         nnzh_tri_lag, hess_obj_vals,
         buffer,
     )

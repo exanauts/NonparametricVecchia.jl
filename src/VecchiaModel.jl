@@ -10,7 +10,8 @@ There is no need for a user to mess with this!
 - `rowsL` : Row index of nonzero entries in L
 - `diagL` : Position of the diagonal coefficient of L
 - `m` : Number of nonzeros in each column of L
-- `offsets` : Number of nonzeros in hess_obj_vals before the block Bⱼ
+- `offsets` : Number of nonzeros of L before the column j, i.e., offset of the block Bⱼ in x
+- `hoffsets` : Number of nonzeros in hess_obj_vals before the block Bⱼ
 - `B` : Vector of matrices Bⱼ, the constant blocks in the Hessian
 - `nnzh_tri_obj` : Number of nonzeros in the lower triangular part of the Hessian of the objective
 - `nnzh_tri_lag` : Number of nonzeros in the lower triangular part of the Hessian of the Lagrangian
@@ -26,7 +27,8 @@ struct VecchiaCache{T, S, VI, M}
     rowsL::VI                           # Row index of nonzero entries in L
     diagL::VI                           # Position of the diagonal coefficient of L
     m::VI                               # Number of nonzeros in each column of L
-    offsets::VI                         # Number of nonzeros in hess_obj_vals before the block Bⱼ
+    offsets::VI                         # Number of nonzeros of L before the column j, i.e., offset of the block Bⱼ in x
+    hoffsets::VI                        # Number of nonzeros in hess_obj_vals before the block Bⱼ
     B::Vector{M}                        # Vector of matrices Bⱼ, the constant blocks in the Hessian
     nnzh_tri_obj::Int                   # Number of nonzeros in the lower triangular part of the Hessian of the objective
     nnzh_tri_lag::Int                   # Number of nonzeros in the lower triangular part of the Hessian of the Lagrangian
@@ -148,6 +150,20 @@ function VecchiaModel(U::UpperTriangular{G, SparseMatrixCSC{G,Int64}}, samples;
                uvar_diag, lambda, uplo=:U, format=:csc)
 end
 
+# Offsets of the blocks Bⱼ in the vector of variables (`offsets`) and in the nonzeros of
+# the lower triangular part of the Hessian (`hoffsets`), computed once so that the GPU
+# kernels can process the blocks independently.
+function vecchia_block_offsets(m::Vector{Int})
+    n = length(m)
+    offsets = zeros(Int, n)
+    hoffsets = zeros(Int, n)
+    for j in 2:n
+        offsets[j] = offsets[j-1] + m[j-1]
+        hoffsets[j] = hoffsets[j-1] + m[j-1] * (m[j-1] + 1) ÷ 2
+    end
+    return offsets, hoffsets
+end
+
 function create_vecchia_cache(I::Vector{Int}, J::Vector{Int}, samples::Matrix{T},
                               lambda::T, format::Symbol, uplo::Symbol) where {T}
     S = Vector{T}
@@ -175,11 +191,11 @@ function create_vecchia_cache(I::Vector{Int}, J::Vector{Int}, samples::Matrix{T}
     nnzh_tri_obj = sum(m[j] * (m[j] + 1) for j in 1:n) ÷ 2
     nnzh_tri_lag = nnzh_tri_obj + n
 
-    offsets = Int[]
+    offsets, hoffsets = vecchia_block_offsets(m)
     B = [Matrix{T}(undef, m[j], m[j]) for j = 1:n]
 
     hess_obj_vals = S(undef, nnzh_tri_obj)
-    vecchia_build_B!(B, samples, lambda, rowsL, colptrL, hess_obj_vals, n, m)
+    vecchia_build_B!(B, samples, lambda, rowsL, colptrL, hess_obj_vals, n, m, hoffsets)
 
     if uplo == :L
         diagL = colptrL[1:n]
@@ -194,7 +210,7 @@ function create_vecchia_cache(I::Vector{Int}, J::Vector{Int}, samples::Matrix{T}
     return VecchiaCache{eltype(S), S, typeof(rowsL), typeof(B[1])}(
         n, Msamples, nnzL,
         colptrL, rowsL, diagL,
-        m, offsets, B, nnzh_tri_obj,
+        m, offsets, hoffsets, B, nnzh_tri_obj,
         nnzh_tri_lag, hess_obj_vals,
         buffer,
     )

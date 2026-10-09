@@ -8,26 +8,24 @@ using NonparametricVecchia
     a `Vector`). The methods for `Vector` are implemented in the main package.
 =#
 function NonparametricVecchia.vecchia_mul!(y::AbstractVector{T}, B::Vector{<:AbstractMatrix{T}}, hess_obj_vals::AbstractVector{T},
-                                           x::AbstractVector{T}, n::Int, m::AbstractVector{Int}, offsets::AbstractVector{Int}) where T <: AbstractFloat
+                                           x::AbstractVector{T}, n::Int, m::AbstractVector{Int}, offsets::AbstractVector{Int},
+                                           hoffsets::AbstractVector{Int}) where T <: AbstractFloat
     # Reset the vector y
     fill!(y, zero(T))
 
     # Launch the kernel
     backend = KernelAbstractions.get_backend(y)
     kernel = vecchia_mul_kernel!(backend)
-    kernel(y, hess_obj_vals, x, m, offsets, ndrange=n)
+    kernel(y, hess_obj_vals, x, m, offsets, hoffsets, ndrange=n)
     KernelAbstractions.synchronize(backend)
     return y
 end
 
-@kernel function vecchia_mul_kernel!(y, @Const(hess_obj_vals), @Const(x), @Const(m), @Const(offsets))
+@kernel function vecchia_mul_kernel!(y, @Const(hess_obj_vals), @Const(x), @Const(m), @Const(offsets), @Const(hoffsets))
     index = @index(Global)
     offset = offsets[index]
     mj = m[index]
-    pos = 0
-    for i = 1:index-1
-        pos += m[i] * (m[i] + 1) ÷ 2
-    end
+    pos = hoffsets[index]
 
     # Perform the matrix-vector multiplication for the current symmetric block
     for j in 1:mj
@@ -50,25 +48,21 @@ end
 
 function NonparametricVecchia.vecchia_build_B!(B::Vector{<:AbstractMatrix{T}}, samples::AbstractMatrix{T}, lambda::T,
                                                rowsL::AbstractVector{Int}, colptrL::AbstractVector{Int}, hess_obj_vals::AbstractVector{T},
-                                               n::Int, m::AbstractVector{Int}) where T <: AbstractFloat
+                                               n::Int, m::AbstractVector{Int}, hoffsets::AbstractVector{Int}) where T <: AbstractFloat
     # Launch the kernel
     backend = KernelAbstractions.get_backend(samples)
     r = size(samples, 1)
     kernel = vecchia_build_B_kernel!(backend)
-    kernel(hess_obj_vals, samples, lambda, rowsL, colptrL, m, r, ndrange=n)
+    kernel(hess_obj_vals, samples, lambda, rowsL, colptrL, m, hoffsets, r, ndrange=n)
     KernelAbstractions.synchronize(backend)
     return nothing
 end
 
-@kernel function vecchia_build_B_kernel!(hess_obj_vals, @Const(samples), @Const(lambda), @Const(rowsL), @Const(colptrL), @Const(m), @Const(r))
+@kernel function vecchia_build_B_kernel!(hess_obj_vals, @Const(samples), @Const(lambda), @Const(rowsL), @Const(colptrL), @Const(m), @Const(hoffsets), @Const(r))
     index = @index(Global)
     col = colptrL[index]
     mj = m[index]
-
-    pos = 0
-    for i = 1:index-1
-        pos += m[i] * (m[i] + 1) ÷ 2
-    end
+    pos = hoffsets[index]
 
     for s in 1:mj
         for t in s:mj
@@ -89,24 +83,21 @@ end
 end
 
 function NonparametricVecchia.vecchia_generate_hess_tri_structure!(n::Int, m::AbstractVector{Int}, nnzL::Int, nnzh_tri_obj::Int,
-                                                                   offsets::AbstractVector{Int}, hrows::AbstractVector{<:Integer}, hcols::AbstractVector{<:Integer})
+                                                                   offsets::AbstractVector{Int}, hoffsets::AbstractVector{Int},
+                                                                   hrows::AbstractVector{<:Integer}, hcols::AbstractVector{<:Integer})
     # launch the kernel
     backend = KernelAbstractions.get_backend(hrows)
     kernel = vecchia_generate_hess_tri_structure_kernel!(backend)
-    kernel(n, m, nnzL, nnzh_tri_obj, offsets, hrows, hcols, ndrange=n)
+    kernel(n, m, nnzL, nnzh_tri_obj, offsets, hoffsets, hrows, hcols, ndrange=n)
     KernelAbstractions.synchronize(backend)
     return nothing
 end
 
-@kernel function vecchia_generate_hess_tri_structure_kernel!(@Const(n), @Const(m), @Const(nnzL), @Const(nnzh_tri_obj), @Const(offsets), hrows, hcols)
+@kernel function vecchia_generate_hess_tri_structure_kernel!(@Const(n), @Const(m), @Const(nnzL), @Const(nnzh_tri_obj), @Const(offsets), @Const(hoffsets), hrows, hcols)
     index = @index(Global)
     mj = m[index]
     offset = offsets[index]
-
-    pos = 0
-    for i = 1:index-1
-        pos += m[i] * (m[i] + 1) ÷ 2
-    end
+    pos = hoffsets[index]
 
     for s in 1:mj
         for t in 1:mj
