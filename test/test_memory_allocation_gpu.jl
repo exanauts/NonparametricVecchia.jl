@@ -197,4 +197,8 @@ end
     @test mems[:jac_coord!] == 0.0
     @test mems[:hess_coord!] == 0.0
     @test mems[:hess_lag_coord!] == 0.0
+    @test mems[:hprod!] == 0.0
+    @test mems[:hprod_lag!] == 0.0
+    @test mems[:jprod!] == 0.0
+    @test mems[:jtprod!] == 0.0
 end

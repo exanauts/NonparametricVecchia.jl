@@ -77,6 +77,37 @@
         @test res.objective ≈ ref.objective rtol=1e-6
     end
 
+    @testset "Allocations -- uplo = $uplo" for (uplo, pattern) in ((:U, banded_U(100, 5)), (:L, banded_L(100, 5)))
+        nlp = VecchiaModel(pattern, samples; lambda=1e-2)
+        solver = MadNLPSolver(nlp; kkt_system=VecchiaKKTSystem, print_level=MadNLP.ERROR)
+        MadNLP.solve!(solver)
+        kkt = solver.kkt
+        ls = kkt.linear_solver
+        nvar, ncon = nlp.meta.nvar, nlp.meta.ncon
+
+        rng = StableRNG(2026)
+        b = MadNLP.UnreducedKKTVector(kkt)
+        randn!(rng, MadNLP.full(b))
+        w = copy(b)
+        y = randn(rng, ncon)
+        Jty = zeros(nvar)
+        t = randn(rng, nvar)
+        Ht = zeros(nvar)
+
+        factorize_reuse() = MadNLP.factorize!(ls)
+        # NaN in the copy of the Hessian forces the refactorization of all blocks
+        factorize_all() = (fill!(ls.hess_copy, NaN); MadNLP.factorize!(ls))
+        solve() = (copyto!(MadNLP.full(w), MadNLP.full(b)); MadNLP.solve_kkt!(kkt, w))
+        kktmul() = mul!(w, kkt, b, -1.0, 1.0)
+        jtprod() = MadNLP.jtprod!(Jty, kkt, y)
+        hessmul() = MadNLP.mul_hess_blk!(Ht, kkt, t)
+
+        for f in (factorize_reuse, factorize_all, solve, kktmul, jtprod, hessmul)
+            f()  # compilation
+            @test (@allocated f()) == 0
+        end
+    end
+
     @testset "Active bounds" begin
         nlp = VecchiaModel(banded_L(100, 5), samples; lvar_diag=fill(1.0, 100), uvar_diag=fill(2.0, 100))
         ref = madnlp(nlp; print_level=MadNLP.ERROR)

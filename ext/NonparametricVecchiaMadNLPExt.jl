@@ -270,8 +270,11 @@ function MadNLP.factorize!(ls::VecchiaBlockSolver{T}) where T
         # such that MadNLP increases the primal regularization.
         ls.inertia = (0, 0, p + 2n)
     else
-        npos = mapreduce(_npos, +, ls.det, ls.q, ls.e)
-        nzero = mapreduce(_nzero, +, ls.det, ls.q, ls.e)
+        # The counts are stored in a buffer to avoid allocating a temporary array.
+        ls.buffer .= _npos.(ls.det, ls.q, ls.e)
+        npos = round(Int, sum(ls.buffer))
+        ls.buffer .= _nzero.(ls.det, ls.q, ls.e)
+        nzero = round(Int, sum(ls.buffer))
         ls.inertia = (p + npos, nzero, 2n - npos - nzero)
     end
     return ls
