@@ -1,3 +1,22 @@
+# Building and solving a `VecchiaModel`
+
+A [`VecchiaModel`](@ref) is the maximum likelihood estimation problem whose solution is a sparse
+triangular factor `L` such that `L * L'` approximates the inverse of the covariance matrix of the samples.
+It is built from two ingredients:
+
+- the sparsity pattern of the factor, given as a `LowerTriangular` or `UpperTriangular` sparse matrix,
+  or as row and column indices;
+- a matrix of samples of size `m × n`, with one replicate per row.
+
+The model is an `AbstractNLPModel` of [NLPModels.jl](https://github.com/JuliaSmoothOptimizers/NLPModels.jl),
+so it can be solved with any compatible solver, such as Ipopt, MadNLP or Uno.
+The factor is then recovered from the solution with [`recover_factor`](@ref).
+
+## Lower triangular factor
+
+The sparsity pattern can be given in COO format, with the row and column indices of its nonzeros.
+Here, the pattern is the full lower triangle, and the problem is solved with Ipopt.
+
 ```@example VecchiaModel_L
 using NonparametricVecchia
 using LinearAlgebra
@@ -17,6 +36,11 @@ output = ipopt(nlp_L)
 L = recover_factor(nlp_L, output.solution)
 ```
 
+## Upper triangular factor
+
+With `uplo=:U`, the factor is upper triangular.
+The diagonal entry of each column is then its last nonzero instead of its first one.
+
 ```@example VecchiaModel_U
 using NonparametricVecchia
 using LinearAlgebra
@@ -35,6 +59,15 @@ nlp_U = VecchiaModel(I, J, samples; format=:coo, uplo=:U)
 output = ipopt(nlp_U)
 U = recover_factor(nlp_U, output.solution)
 ```
+
+## Sparsity pattern from Vecchia.jl
+
+In practice, the sparsity pattern of the factor comes from the Vecchia approximation:
+the nonzeros of each column correspond to a small set of conditioning points.
+With [Vecchia.jl](https://github.com/cgeoga/Vecchia.jl), a `VecchiaModel` can be built
+directly from the locations of the observations, an ordering, and a design of the
+conditioning sets. Following the conventions of Vecchia.jl, the data are then given with one
+replicate per column. The model is solved with MadNLP and [`VecchiaKKTSystem`](@ref).
 
 ```@example Vecchia
 using NonparametricVecchia
