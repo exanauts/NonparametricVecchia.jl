@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Building and solving a VecchiaModel · NonparametricVecchia.jl</title><meta name="title" content="Building and solving a VecchiaModel · NonparametricVecchia.jl"/><meta property="og:title" content="Building and solving a VecchiaModel · NonparametricVecchia.jl"/><meta property="twitter:title" content="Building and solving a VecchiaModel · NonparametricVecchia.jl"/><meta name="description" content="Documentation for NonparametricVecchia.jl."/><meta property="og:description" content="Documentation for NonparametricVecchia.jl."/><meta property="twitter:description" content="Documentation for NonparametricVecchia.jl."/><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.63.2/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../search_index.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">NonparametricVecchia.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><input class="collapse-toggle" id="menuitem-2" type="checkbox" checked/><label class="tocitem" for="menuitem-2"><span class="docs-label">Tutorials</span><i class="docs-chevron"></i></label><ul class="collapsed"><li class="is-active"><a class="tocitem" href>Building and solving a <code>VecchiaModel</code></a><ul class="internal"><li><a class="tocitem" href="#Sparsity-pattern-and-samples"><span>Sparsity pattern and samples</span></a></li><li><a class="tocitem" href="#Sparsity-pattern-from-Vecchia.jl"><span>Sparsity pattern from Vecchia.jl</span></a></li></ul></li><li><a class="tocitem" href="../kkt_system/">Solving with MadNLP and <code>VecchiaKKTSystem</code></a></li></ul></li><li><a class="tocitem" href="../reference/">Reference</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li class="is-active"><a href>Building and solving a <code>VecchiaModel</code></a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Building and solving a <code>VecchiaModel</code></a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/exanauts/NonparametricVecchia.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/exanauts/NonparametricVecchia.jl/blob/main/docs/src/vecchia_model.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Building-and-solving-a-VecchiaModel"><a class="docs-heading-anchor" href="#Building-and-solving-a-VecchiaModel">Building and solving a <code>VecchiaModel</code></a><a id="Building-and-solving-a-VecchiaModel-1"></a><a class="docs-heading-anchor-permalink" href="#Building-and-solving-a-VecchiaModel" title="Permalink"></a></h1><p>A <a href="../reference/#NonparametricVecchia.VecchiaModel-Union{Tuple{T}, Tuple{Vector{Int64}, Vector{Int64}, Matrix{T}}} where T"><code>VecchiaModel</code></a> is the maximum likelihood estimation problem whose solution is a sparse triangular factor <code>T</code> such that <code>T * T&#39;</code> approximates the inverse of the covariance matrix of the samples. It is built from two ingredients:</p><ul><li>the sparsity pattern of the factor, given as a <code>LowerTriangular</code> or <code>UpperTriangular</code> sparse matrix, or as row and column indices;</li><li>a matrix of samples of size <code>m × n</code>, with one replicate per row.</li></ul><p>The model is an <code>AbstractNLPModel</code> of <a href="https://github.com/JuliaSmoothOptimizers/NLPModels.jl">NLPModels.jl</a>, so it can be solved with any compatible solver, such as MadNLP, Ipopt or Uno. The factor is then recovered from the solution with <a href="../reference/#NonparametricVecchia.recover_factor-Union{Tuple{T}, Tuple{VecchiaModel{T, Vector{T}}, Vector{T}}} where T"><code>recover_factor</code></a>.</p><h2 id="Sparsity-pattern-and-samples"><a class="docs-heading-anchor" href="#Sparsity-pattern-and-samples">Sparsity pattern and samples</a><a id="Sparsity-pattern-and-samples-1"></a><a class="docs-heading-anchor-permalink" href="#Sparsity-pattern-and-samples" title="Permalink"></a></h2><p>As a first example, we consider <code>n</code> points on a line with an exponential covariance function, and a banded sparsity pattern: each column of the factor involves the <code>k</code> previous points. The samples are stored in a matrix of size <code>m × n</code>, with one replicate per row.</p><pre><code class="language-julia hljs">using NonparametricVecchia
+using LinearAlgebra
+using SparseArrays
+
+n, k, m = 200, 5, 100
+K = [exp(-abs(i - j) / 10) for i in 1:n, j in 1:n]  # covariance matrix
+samples = Matrix((cholesky(K).L * randn(n, m))&#39;)     # one replicate per row
+
+pattern = LowerTriangular(spdiagm([-j =&gt; trues(n - j) for j in 0:k]...))
+nlp = VecchiaModel(pattern, samples)</code></pre><p>The same model can be built from the row and column indices of the nonzeros (COO format), and an upper triangular factor is obtained with an <code>UpperTriangular</code> pattern or with <code>uplo=:U</code>. For an upper triangular factor, the diagonal entry of each column is its last nonzero instead of its first one.</p><pre><code class="language-julia hljs">rows, cols, _ = findnz(pattern.data)
+nlp_coo = VecchiaModel(rows, cols, samples; format=:coo, uplo=:L)
+
+pattern_U = UpperTriangular(sparse(pattern.data&#39;))
+nlp_U = VecchiaModel(pattern_U, samples)</code></pre><p>The model is solved with MadNLP and <a href="../reference/#NonparametricVecchia.VecchiaKKTSystem"><code>VecchiaKKTSystem</code></a>, and the factor <code>T</code> is recovered with <a href="../reference/#NonparametricVecchia.recover_factor-Union{Tuple{T}, Tuple{VecchiaModel{T, Vector{T}}, Vector{T}}} where T"><code>recover_factor</code></a>:</p><pre><code class="language-julia hljs">using MadNLP
+
+result = madnlp(nlp; kkt_system=VecchiaKKTSystem, print_level=MadNLP.ERROR)
+T = recover_factor(nlp, result.solution)
+result.status</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">SOLVE_SUCCEEDED::Status = 1</code></pre><p>Since <code>T * T&#39;</code> approximates the inverse of <code>K</code>, the product <code>T&#39; * K * T</code> approximates the identity. The relative error decreases as the number of replicates increases:</p><pre><code class="language-julia hljs">for m in (100, 1_000, 10_000)
+    samples_m = Matrix((cholesky(K).L * randn(n, m))&#39;)
+    nlp_m = VecchiaModel(pattern, samples_m)
+    result_m = madnlp(nlp_m; kkt_system=VecchiaKKTSystem, print_level=MadNLP.ERROR)
+    T_m = recover_factor(nlp_m, result_m.solution)
+    println(&quot;m = &quot;, m, &quot;: &quot;, norm(T_m&#39; * K * T_m - I) / sqrt(n))
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">m = 100: 0.41148344451939095
+m = 1000: 0.11076942029111114
+m = 10000: 0.03456758854933662</code></pre><p>Any other solver of the JuliaSmoothOptimizers ecosystem can be used as well, for instance Ipopt with <code>using NLPModelsIpopt; ipopt(nlp)</code>, or Uno with <code>using UnoSolver; uno(nlp)</code>.</p><h2 id="Sparsity-pattern-from-Vecchia.jl"><a class="docs-heading-anchor" href="#Sparsity-pattern-from-Vecchia.jl">Sparsity pattern from Vecchia.jl</a><a id="Sparsity-pattern-from-Vecchia.jl-1"></a><a class="docs-heading-anchor-permalink" href="#Sparsity-pattern-from-Vecchia.jl" title="Permalink"></a></h2><p>In practice, the sparsity pattern of the factor comes from the Vecchia approximation: the nonzeros of each column correspond to a small set of conditioning points. With <a href="https://github.com/cgeoga/Vecchia.jl">Vecchia.jl</a>, a <code>VecchiaModel</code> can be built directly from the locations of the observations, an ordering, and a design of the conditioning sets. Following the conventions of Vecchia.jl, the data are then given with one replicate per column. The model is solved with MadNLP and <a href="../reference/#NonparametricVecchia.VecchiaKKTSystem"><code>VecchiaKKTSystem</code></a>.</p><pre><code class="language-julia hljs">using NonparametricVecchia
+using Vecchia
+using StaticArrays
+using LinearAlgebra
+
+# Generate some fake data with an exponential covariance function.
+# Note that each _column_ of sim is an iid replicate, in keeping with formatting
+# standards of the many R packages for GPs. In this demonstration, n is small
+# and the number of replicates is large to demonstrate asymptotic correctness.
+pts = rand(SVector{2,Float64}, 100)
+z   = randn(length(pts), 1000)
+K   = Symmetric([exp(-norm(x-y)) for x in pts, y in pts])
+sim = cholesky(K).L * z
+
+# Create a VecchiaModel using the options specified by Vecchia.jl, in
+# particular choosing an ordering (in this case RandomOrdering()) and a
+# conditioning set design (in this case KNNConditioning(10)). This also returns
+# the permutation for you to use with subsequent data operations. See the docs
+# and myriad extensions of Vecchia.jl for more information on ordering and
+# conditioning set design options.
+(perm, nlp) = VecchiaModel(pts, sim, RandomOrdering(), KNNConditioning(10);
+                           lvar_diag=fill(inv(sqrt(1.0)),  length(pts)),
+                           uvar_diag=fill(inv(sqrt(1e-2)), length(pts)),
+                           lambda=1e-3)
+
+# Now bring in some optimizers and fit the nonparametric model. This gives a U
+# such that Σ^{-1} ≈ U*U&#39;, where Σ is the covariance matrix for each column of sim.
+# The option `kkt_system=VecchiaKKTSystem` exploits the block structure of the KKT
+# systems: the Newton steps are computed with dense Cholesky factorizations of the
+# blocks of the Hessian, without any sparse linear solver.
+using MadNLP
+result = madnlp(nlp; tol=1e-10, kkt_system=VecchiaKKTSystem)
+U      = UpperTriangular(recover_factor(nlp, result.solution))
+
+# KL divergence from the true covariance:
+K_perm = K[perm, perm]
+kl     = (tr(U&#39;*K_perm*U) - length(pts)) + (-2*logdet(U) - logdet(K_perm))
+
+# compare that with what you get from a parametric Vecchia model using the
+# correct kernel and the same permutation.
+para_vecchia = VecchiaApproximation(pts[perm], (x,y,p)-&gt;exp(-norm(x-y)), sim[perm,:];
+                                    ordering=NoPermutation())
+para_U  = rchol(para_vecchia, Float64[]).U
+para_kl = (tr(para_U&#39;*K_perm*para_U) - length(pts)) + (-2*logdet(para_U) - logdet(K_perm))
+
+println(&quot;KL divergence with true parametric kernel:  &quot;, para_kl)
+println(&quot;KL divergence with nonparametric estimator: &quot;, kl)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">This is <span class="sgr34">Mad</span><span class="sgr31">N</span><span class="sgr32">L</span><span class="sgr35">P</span> version v0.10.1, running with VecchiaBlockSolver (block Cholesky)
+
+Number of nonzeros in constraint Jacobian............:      200
+Number of nonzeros in Lagrangian Hessian.............:     6260
+
+Total number of variables............................:     1145
+                     variables with only lower bounds:        0
+                variables with lower and upper bounds:      100
+                     variables with only upper bounds:        0
+Total number of equality constraints.................:      100
+Total number of inequality constraints...............:        0
+        inequality constraints with only lower bounds:        0
+   inequality constraints with lower and upper bounds:        0
+        inequality constraints with only upper bounds:        0
+
+iter    objective    inf_pr   inf_du inf_compl lg(mu) lg(rg) alpha_pr ir ls
+   0  5.0904665e+04 1.01e-02 9.46e+01 2.29e+00  -1.0     -   0.00e+00  1  0
+   1 -3.1777114e+04 1.56e-01 8.52e+01 2.24e+00  -1.0     -   1.00e+00  1  1h
+   2 -6.5661673e+04 5.30e+00 4.93e+01 1.92e+00  -1.0     -   2.29e-01  1  1h
+   3 -7.1944301e+04 3.95e-01 2.63e+01 1.78e+00  -1.0     -   1.00e+00  1  1h
+   4 -6.6096308e+04 4.61e-02 2.41e+00 2.05e-01  -1.0     -   1.00e+00  1  1h
+   5 -6.5296474e+04 6.87e-04 3.06e-02 1.02e-01  -1.0     -   1.00e+00  1  1h
+   6 -6.5287075e+04 2.95e-05 8.94e-03 1.51e-02  -2.5     -   1.00e+00  1  1h
+   7 -6.5287189e+04 1.26e-06 3.73e-04 6.38e-04  -3.8     -   1.00e+00  1  1h
+   8 -6.5287194e+04 2.59e-09 7.69e-07 2.85e-06  -5.7     -   1.00e+00  1  1h
+   9 -6.5287194e+04 5.25e-14 1.56e-11 2.53e-09  -8.6     -   1.00e+00  2  1h
+iter    objective    inf_pr   inf_du inf_compl lg(mu) lg(rg) alpha_pr ir ls
+  10 -6.5287194e+04 8.88e-16 1.66e-13 9.09e-12 -11.0     -   1.00e+00  2  1h
+
+Number of Iterations....: 10
+
+                                   (scaled)                 (unscaled)
+Objective...............:  -5.9544431785491388e+03   -6.5287194226299762e+04
+Dual infeasibility......:   1.6589882861643473e-13    1.8189894035458565e-12
+Constraint violation....:   8.8817841970012523e-16    8.8817841970012523e-16
+Complementarity.........:   8.2912739080508125e-13    9.0909257807421310e-12
+Overall NLP error.......:   9.0909257807421310e-12    9.0909257807421310e-12
+
+Number of objective function evaluations              = 11
+Number of objective gradient evaluations              = 11
+Number of constraint evaluations                      = 11
+Number of constraint Jacobian evaluations             = 11
+Number of Lagrangian Hessian evaluations              = 10
+Number of KKT factorizations                          = 11
+Number of KKT backsolves                              = 13
+
+Total wall secs in initialization                     =  0.000 s
+Total wall secs in linear solver                      =  0.001 s
+Total wall secs in NLP function evaluations           =  0.000 s
+Total wall secs in solver (w/o init./fun./lin. alg.)  =  0.001 s
+Total wall secs                                       =  0.002 s
+
+<span class="sgr32">EXIT: Optimal Solution Found (tol = 1.0e-10).</span>
+KL divergence with true parametric kernel:  0.4492465122277025
+KL divergence with nonparametric estimator: 1.6064285412027601</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><a class="docs-footer-nextpage" href="../kkt_system/">Solving with MadNLP and <code>VecchiaKKTSystem</code> »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.19.0 on <span class="colophon-date" title="Friday 9 October 2026 04:37">Friday 9 October 2026</span>. Using Julia version 1.13.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
