@@ -1,7 +1,7 @@
 # Building and solving a `VecchiaModel`
 
 A [`VecchiaModel`](@ref) is the maximum likelihood estimation problem whose solution is a sparse
-triangular factor `L` such that `L * L'` approximates the inverse of the covariance matrix of the samples.
+triangular factor `T` such that `T * T'` approximates the inverse of the covariance matrix of the samples.
 It is built from two ingredients:
 
 - the sparsity pattern of the factor, given as a `LowerTriangular` or `UpperTriangular` sparse matrix,
@@ -45,17 +45,17 @@ nlp_U = VecchiaModel(pattern_U, samples)
 nothing # hide
 ```
 
-The model is solved with MadNLP and [`VecchiaKKTSystem`](@ref), and the factor is recovered with [`recover_factor`](@ref):
+The model is solved with MadNLP and [`VecchiaKKTSystem`](@ref), and the factor `T` is recovered with [`recover_factor`](@ref):
 
 ```@example basics
 using MadNLP
 
 result = madnlp(nlp; kkt_system=VecchiaKKTSystem, print_level=MadNLP.ERROR)
-L = recover_factor(nlp, result.solution)
+T = recover_factor(nlp, result.solution)
 result.status
 ```
 
-Since `L * L'` approximates the inverse of `K`, the product `L' * K * L` approximates the identity.
+Since `T * T'` approximates the inverse of `K`, the product `T' * K * T` approximates the identity.
 The relative error decreases as the number of replicates increases:
 
 ```@example basics
@@ -63,8 +63,8 @@ for m in (100, 1_000, 10_000)
     samples_m = Matrix((cholesky(K).L * randn(n, m))')
     nlp_m = VecchiaModel(pattern, samples_m)
     result_m = madnlp(nlp_m; kkt_system=VecchiaKKTSystem, print_level=MadNLP.ERROR)
-    L_m = recover_factor(nlp_m, result_m.solution)
-    println("m = ", m, ": ", norm(L_m' * K * L_m - I) / sqrt(n))
+    T_m = recover_factor(nlp_m, result_m.solution)
+    println("m = ", m, ": ", norm(T_m' * K * T_m - I) / sqrt(n))
 end
 ```
 

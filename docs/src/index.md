@@ -3,8 +3,8 @@
 ## Overview
 
 This package estimates the covariance structure of a Gaussian random field from i.i.d. replicates, without assuming a parametric covariance function.
-It computes a sparse triangular factor `L` such that `L * L'` approximates the inverse of the covariance matrix, by maximum likelihood estimation.
-The sparsity pattern of `L` is chosen a priori, typically from Vecchia's approximation, where each column only involves a small set of conditioning points.
+It computes a sparse triangular factor `T` such that `T * T'` approximates the inverse of the covariance matrix, by maximum likelihood estimation.
+The sparsity pattern of `T` is chosen a priori, typically from Vecchia's approximation, where each column only involves a small set of conditioning points.
 The estimation problem is solved with interior-point methods, and its structure makes it highly efficient for large-scale problems, on CPUs and GPUs.
 
 ## Features

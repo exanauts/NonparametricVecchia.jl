@@ -21,8 +21,8 @@ function vecchia_model_gpu(I::Vector{Int}, J::Vector{Int}, samples::AbstractMatr
     lvar = fill!(S(undef, nvar), -Inf)
     uvar = fill!(S(undef, nvar),  Inf)
 
-    # Apply box constraints to the diagonal of L through the variables w = log(diag(L)).
-    # Bounding w instead of the diagonal entries of L keeps the Hessian block of L
+    # Apply box constraints to the diagonal of the factor T through the variables w = log(diag(T)).
+    # Bounding w instead of the diagonal entries of T keeps the Hessian block of T
     # independent of the iterate, which is exploited by `VecchiaKKTSystem`.
     w_lvar = view(lvar, cache.nnzL+1:nvar)
     w_uvar = view(uvar, cache.nnzL+1:nvar)

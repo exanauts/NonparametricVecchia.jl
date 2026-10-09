@@ -9,12 +9,12 @@
 
 ## Overview
 
-**NonparametricVecchia.jl** is a Julia package that approximates the inverse
-cholesky factor of a Gaussian process covariance matrix via a nonparametric
-optimization process.  The nonzero entries of the inverse cholesky, `L`, are
-determined via the Vecchia Approximation.  The values of `L` are recovered via
-optimizing the joint probability distribution function (mean zero) to best match
-the given samples.
+**NonparametricVecchia.jl** is a Julia package that estimates a sparse inverse
+Cholesky factor of the covariance matrix of a Gaussian process, without assuming a
+parametric covariance function. It computes a sparse triangular factor `T` such that
+`T * T'` approximates the inverse of the covariance matrix, by maximizing the likelihood
+of the given samples (mean zero). The sparsity pattern of `T` is chosen a priori,
+typically from Vecchia's approximation.
 
 ## Installation
 
@@ -44,7 +44,7 @@ pattern = LowerTriangular(spdiagm([-j => trues(n - j) for j in 0:k]...))
 
 nlp = VecchiaModel(pattern, samples)
 result = madnlp(nlp; kkt_system=VecchiaKKTSystem)
-L = recover_factor(nlp, result.solution)       # Σ⁻¹ ≈ L * L'
+T = recover_factor(nlp, result.solution)       # Σ⁻¹ ≈ T * T'
 ```
 
 ### Structure-exploiting KKT system
@@ -73,7 +73,7 @@ using CUDA, MadNLPGPU                          # or: using AMDGPU, MadNLPGPU
 
 nlp = VecchiaModel(pattern, CuMatrix(samples)) # or: ROCMatrix(samples)
 result = madnlp(nlp; kkt_system=VecchiaKKTSystem)
-L = recover_factor(nlp, result.solution)       # CuSparseMatrixCSC or ROCSparseMatrixCSC
+T = recover_factor(nlp, result.solution)       # CuSparseMatrixCSC or ROCSparseMatrixCSC
 ```
 
 See the [documentation](https://exanauts.github.io/NonparametricVecchia.jl/dev) for more details.
