@@ -1,3 +1,22 @@
+# Allocations of the operations of VecchiaKKTSystem.
+# The measurements are done in a function to avoid the allocations of closures
+# capturing local variables, which happen with Julia 1.10.
+function vecchia_kkt_allocations(kkt, b, w, y, Jty, t, Ht)
+    ls = kkt.linear_solver
+    allocs = Dict{Symbol, Int}()
+    for _ in 1:2  # the first pass compiles the functions
+        allocs[:factorize_reuse] = @allocated MadNLP.factorize!(ls)
+        fill!(ls.hess_copy, NaN)  # forces the refactorization of all blocks
+        allocs[:factorize_all] = @allocated MadNLP.factorize!(ls)
+        copyto!(MadNLP.full(w), MadNLP.full(b))
+        allocs[:solve_kkt] = @allocated MadNLP.solve_kkt!(kkt, w)
+        allocs[:mul] = @allocated mul!(w, kkt, b, -1.0, 1.0)
+        allocs[:jtprod] = @allocated MadNLP.jtprod!(Jty, kkt, y)
+        allocs[:mul_hess_blk] = @allocated MadNLP.mul_hess_blk!(Ht, kkt, t)
+    end
+    return allocs
+end
+
 @testset "VecchiaKKTSystem" begin
     samples = gensamples(100, 75)
 
@@ -94,17 +113,9 @@
         t = randn(rng, nvar)
         Ht = zeros(nvar)
 
-        factorize_reuse() = MadNLP.factorize!(ls)
-        # NaN in the copy of the Hessian forces the refactorization of all blocks
-        factorize_all() = (fill!(ls.hess_copy, NaN); MadNLP.factorize!(ls))
-        solve() = (copyto!(MadNLP.full(w), MadNLP.full(b)); MadNLP.solve_kkt!(kkt, w))
-        kktmul() = mul!(w, kkt, b, -1.0, 1.0)
-        jtprod() = MadNLP.jtprod!(Jty, kkt, y)
-        hessmul() = MadNLP.mul_hess_blk!(Ht, kkt, t)
-
-        for f in (factorize_reuse, factorize_all, solve, kktmul, jtprod, hessmul)
-            f()  # compilation
-            @test (@allocated f()) == 0
+        allocs = vecchia_kkt_allocations(kkt, b, w, y, Jty, t, Ht)
+        for (name, bytes) in pairs(allocs)
+            @test bytes == 0
         end
     end
 
