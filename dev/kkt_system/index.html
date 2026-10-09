@@ -26,20 +26,20 @@ Total number of inequality constraints...............:        0
         inequality constraints with only upper bounds:        0
 
 iter    objective    inf_pr   inf_du inf_compl lg(mu) lg(rg) alpha_pr ir ls
-   0  5.0483607e+04 0.00e+00 1.93e+01 2.30e+01  -1.0     -   0.00e+00  1  0
-   1  4.7529174e+04 2.47e-02 8.17e-01 6.47e-01  -1.0     -   1.00e+00  1  1f
-   2  4.7683618e+04 1.18e-04 4.07e-03 2.02e-02  -1.7     -   1.00e+00  1  1h
-   3  4.7683869e+04 2.91e-09 1.09e-07 1.50e-04  -3.8     -   1.00e+00  1  1h
-   4  4.7683869e+04 2.22e-16 4.26e-14 2.51e-09  -8.6     -   1.00e+00  1  1h
+   0  4.9933143e+04 0.00e+00 1.89e+01 2.30e+01  -1.0     -   0.00e+00  1  0
+   1  4.6981150e+04 1.72e-02 8.74e-01 5.81e-01  -1.0     -   1.00e+00  1  1f
+   2  4.7146189e+04 8.60e-05 5.03e-03 2.02e-02  -1.7     -   1.00e+00  1  1h
+   3  4.7146425e+04 2.01e-09 1.70e-07 1.50e-04  -3.8     -   1.00e+00  1  1h
+   4  4.7146425e+04 2.22e-16 2.84e-14 2.51e-09  -8.6     -   1.00e+00  1  1h
 
 Number of Iterations....: 4
 
                                    (scaled)                 (unscaled)
-Objective...............:   1.8030543705026386e+04    4.7683868828210951e+04
-Dual infeasibility......:   4.2632564145606011e-14    1.1274677179938048e-13
+Objective...............:   1.7468004683633921e+04    4.7146425485559586e+04
+Dual infeasibility......:   2.8421709430404007e-14    7.6710650706901935e-14
 Constraint violation....:   2.2204460492503131e-16    2.2204460492503131e-16
-Complementarity.........:   9.4755343972727330e-10    2.5059152217955409e-09
-Overall NLP error.......:   2.5059152217955409e-09    2.5059152217955409e-09
+Complementarity.........:   9.2845704191260088e-10    2.5059204835276693e-09
+Overall NLP error.......:   2.5059204835276693e-09    2.5059204835276693e-09
 
 Number of objective function evaluations              = 5
 Number of objective gradient evaluations              = 5
@@ -49,15 +49,15 @@ Number of Lagrangian Hessian evaluations              = 4
 Number of KKT factorizations                          = 5
 Number of KKT backsolves                              = 5
 
-Total wall secs in initialization                     =  1.168 s
+Total wall secs in initialization                     =  1.614 s
 Total wall secs in linear solver                      =  0.002 s
-Total wall secs in NLP function evaluations           =  0.000 s
-Total wall secs in solver (w/o init./fun./lin. alg.)  =  5.779 s
-Total wall secs                                       =  6.948 s
+Total wall secs in NLP function evaluations           =  0.001 s
+Total wall secs in solver (w/o init./fun./lin. alg.)  =  7.283 s
+Total wall secs                                       =  8.900 s
 
 <span class="sgr32">EXIT: Optimal Solution Found (tol = 1.0e-08).</span></code></pre><p>The solution is the same as the one computed with the default KKT system of MadNLP and a sparse linear solver, but the Newton steps are much cheaper:</p><pre><code class="language-julia hljs">result_default = madnlp(nlp; print_level=MadNLP.ERROR)
 result_vecchia = madnlp(nlp; kkt_system=VecchiaKKTSystem, print_level=MadNLP.ERROR)
-norm(result_default.solution - result_vecchia.solution, Inf)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">2.8449465006019636e-16</code></pre><h2 id="Usage-on-GPU"><a class="docs-heading-anchor" href="#Usage-on-GPU">Usage on GPU</a><a id="Usage-on-GPU-1"></a><a class="docs-heading-anchor-permalink" href="#Usage-on-GPU" title="Permalink"></a></h2><p><code>VecchiaKKTSystem</code> also runs on NVIDIA GPUs with <a href="https://github.com/JuliaGPU/CUDA.jl">CUDA.jl</a> (v6) and on AMD GPUs with <a href="https://github.com/JuliaGPU/AMDGPU.jl">AMDGPU.jl</a>. The factorizations and the solves with the blocks <code>Hⱼ</code> are performed by GPU kernels written with <a href="https://github.com/JuliaGPU/KernelAbstractions.jl">KernelAbstractions.jl</a>, one block per thread, and the model itself (objective, gradient, Hessian) is evaluated on the GPU. It suffices to store the samples in a <code>CuMatrix</code> or a <code>ROCMatrix</code>, and to load <a href="https://github.com/madsuite-org/MadNLP.jl/tree/master/lib/MadNLPGPU">MadNLPGPU.jl</a>:</p><pre><code class="language-julia hljs">using CUDA, MadNLPGPU
+norm(result_default.solution - result_vecchia.solution, Inf)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">2.7755575615628914e-16</code></pre><h2 id="Usage-on-GPU"><a class="docs-heading-anchor" href="#Usage-on-GPU">Usage on GPU</a><a id="Usage-on-GPU-1"></a><a class="docs-heading-anchor-permalink" href="#Usage-on-GPU" title="Permalink"></a></h2><p><code>VecchiaKKTSystem</code> also runs on NVIDIA GPUs with <a href="https://github.com/JuliaGPU/CUDA.jl">CUDA.jl</a> and on AMD GPUs with <a href="https://github.com/JuliaGPU/AMDGPU.jl">AMDGPU.jl</a>. The factorizations and the solves with the blocks <code>Hⱼ</code> are performed by GPU kernels written with <a href="https://github.com/JuliaGPU/KernelAbstractions.jl">KernelAbstractions.jl</a>, one block per thread, and the model itself (objective, gradient, Hessian) is evaluated on the GPU. It suffices to store the samples in a <code>CuMatrix</code> or a <code>ROCMatrix</code>, and to load <a href="https://github.com/madsuite-org/MadNLP.jl/tree/master/lib/MadNLPGPU">MadNLPGPU.jl</a>:</p><pre><code class="language-julia hljs">using CUDA, MadNLPGPU
 
 nlp = VecchiaModel(pattern, CuMatrix(samples))
 result = madnlp(nlp; kkt_system=VecchiaKKTSystem)
@@ -68,4 +68,4 @@ result = madnlp(nlp; kkt_system=VecchiaKKTSystem)
 T = recover_factor(nlp, result.solution)  # ROCSparseMatrixCSC</code></pre><h2 id="Bounds-and-regularization"><a class="docs-heading-anchor" href="#Bounds-and-regularization">Bounds and regularization</a><a id="Bounds-and-regularization-1"></a><a class="docs-heading-anchor-permalink" href="#Bounds-and-regularization" title="Permalink"></a></h2><p>The keyword arguments <code>lvar_diag</code> and <code>uvar_diag</code> of <a href="../reference/#NonparametricVecchia.VecchiaModel-Union{Tuple{T}, Tuple{Vector{Int64}, Vector{Int64}, Matrix{T}}} where T"><code>VecchiaModel</code></a> bound the diagonal entries of the factor. They are imposed on the variables <code>w = log(diag(T))</code>, so that the blocks <code>Hⱼ</code> remain independent of the iterate.</p><p>If the number of replicates <code>m</code> is smaller than the number of nonzeros in a column of the factor, the corresponding block <code>Hⱼ</code> is singular. MadNLP then regularizes the KKT system at every iteration, and the blocks have to be refactorized each time. A small ridge penalty, set with the keyword <code>lambda</code>, makes all blocks positive definite:</p><pre><code class="language-julia hljs">samples_small = randn(5, n)  # only 5 replicates for 11 nonzeros per column
 nlp_small = VecchiaModel(pattern, samples_small; lambda=1e-2)
 result_small = madnlp(nlp_small; kkt_system=VecchiaKKTSystem, print_level=MadNLP.ERROR)
-result_small.status</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">SOLVE_SUCCEEDED::Status = 1</code></pre><h2 id="Limitations"><a class="docs-heading-anchor" href="#Limitations">Limitations</a><a id="Limitations-1"></a><a class="docs-heading-anchor-permalink" href="#Limitations" title="Permalink"></a></h2><ul><li><code>VecchiaKKTSystem</code> only supports a <code>VecchiaModel</code> solved with the exact Hessian (no quasi-Newton approximation).</li><li>The bounds on the diagonal entries must satisfy <code>lvar_diag &lt; uvar_diag</code> (fixed variables are not supported).</li></ul></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../vecchia_model/">« Building and solving a <code>VecchiaModel</code></a><a class="docs-footer-nextpage" href="../reference/">Reference »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.19.0 on <span class="colophon-date" title="Friday 9 October 2026 04:33">Friday 9 October 2026</span>. Using Julia version 1.13.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+result_small.status</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">SOLVE_SUCCEEDED::Status = 1</code></pre><h2 id="Limitations"><a class="docs-heading-anchor" href="#Limitations">Limitations</a><a id="Limitations-1"></a><a class="docs-heading-anchor-permalink" href="#Limitations" title="Permalink"></a></h2><ul><li><code>VecchiaKKTSystem</code> only supports a <code>VecchiaModel</code> solved with the exact Hessian (no quasi-Newton approximation).</li><li>The bounds on the diagonal entries must satisfy <code>lvar_diag &lt; uvar_diag</code> (fixed variables are not supported).</li></ul></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../vecchia_model/">« Building and solving a <code>VecchiaModel</code></a><a class="docs-footer-nextpage" href="../reference/">Reference »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.19.0 on <span class="colophon-date" title="Friday 9 October 2026 04:44">Friday 9 October 2026</span>. Using Julia version 1.13.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
