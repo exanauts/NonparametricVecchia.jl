@@ -262,8 +262,9 @@ function MadNLP.factorize!(ls::VecchiaBlockSolver{T}) where T
     ls.jx .= view(ls.jac, 1:n)
     ls.jw .= view(ls.jac, n+1:2n)
     ls.q .= view(ls.hess, ls.nnzh_obj+1:ls.nnzh_obj+n) .+ view(ls.pr_diag, p+1:p+n)
-    ls.e .= ls.du_diag .- ls.jx .^ 2 .* ls.minv
-    ls.det .= ls.q .* ls.e .- ls.jw .^ 2
+    # x .* x instead of x .^ 2, which allocates with Julia 1.10 and --check-bounds=yes
+    ls.e .= ls.du_diag .- ls.jx .* ls.jx .* ls.minv
+    ls.det .= ls.q .* ls.e .- ls.jw .* ls.jw
 
     if any(!iszero, ls.info)
         # One block Hⱼ + Σₓⱼ is not positive definite: report a wrong inertia
