@@ -117,11 +117,11 @@ end
 #=
     Dense block operations used by `VecchiaKKTSystem`, one GPU thread per block.
 =#
-@kernel function vecchia_factorize_blocks_kernel!(L, hess_copy, pr_copy, hinv_col, minv, info,
+@kernel function vecchia_factorize_blocks_kernel!(L, hess_copy, pr_copy, hinv_col, minv, info, nfact,
                                                   @Const(hess), @Const(pr_diag), @Const(m),
                                                   @Const(xoff), @Const(hoff), @Const(dloc))
     j = @index(Global)
-    NonparametricVecchia._vecchia_factorize_block!(j, L, hess_copy, pr_copy, hinv_col, minv, info,
+    NonparametricVecchia._vecchia_factorize_block!(j, L, hess_copy, pr_copy, hinv_col, minv, info, nfact,
                                                    hess, pr_diag, m, xoff, hoff, dloc)
 end
 
@@ -141,11 +141,11 @@ end
     NonparametricVecchia._vecchia_mul_block!(j, y, hess, x, alpha, beta, m, xoff, hoff)
 end
 
-function NonparametricVecchia.vecchia_factorize_blocks!(L::AbstractVector, hess_copy, pr_copy, hinv_col, minv, info,
+function NonparametricVecchia.vecchia_factorize_blocks!(L::AbstractVector, hess_copy, pr_copy, hinv_col, minv, info, nfact,
                                                         hess, pr_diag, m, xoff, hoff, dloc)
     backend = KernelAbstractions.get_backend(L)
     kernel = vecchia_factorize_blocks_kernel!(backend)
-    kernel(L, hess_copy, pr_copy, hinv_col, minv, info, hess, pr_diag, m, xoff, hoff, dloc, ndrange=length(m))
+    kernel(L, hess_copy, pr_copy, hinv_col, minv, info, nfact, hess, pr_diag, m, xoff, hoff, dloc, ndrange=length(m))
     KernelAbstractions.synchronize(backend)
     return L
 end
