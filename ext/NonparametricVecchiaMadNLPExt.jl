@@ -351,6 +351,9 @@ function NonparametricVecchia.vecchia_kkt_stats(kkt::VecchiaKKT)
     )
 end
 
-NonparametricVecchia.vecchia_kkt_stats(solver::MadNLP.MadNLPSolver) = vecchia_kkt_stats(solver.kkt)
+function NonparametricVecchia.vecchia_kkt_stats(solver::MadNLP.MadNLPSolver)
+    solver.kkt isa VecchiaKKT || throw(ArgumentError("vecchia_kkt_stats requires a MadNLPSolver created with kkt_system=VecchiaKKTSystem."))
+    return vecchia_kkt_stats(solver.kkt)
+end
 
 end # module

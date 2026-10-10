@@ -30,7 +30,7 @@ madnlp(nlp; kkt_system=VecchiaKKTSystem)
 struct VecchiaKKTSystem end
 
 """
-    stats = vecchia_kkt_stats(solver::MadNLPSolver)
+    stats = NonparametricVecchia.vecchia_kkt_stats(solver::MadNLPSolver)
 
 Return the cumulative timings (in seconds) and counters of the linear algebra of
 a `MadNLPSolver` that uses `kkt_system=VecchiaKKTSystem`, as a `NamedTuple` with the fields:
@@ -47,6 +47,6 @@ a `MadNLPSolver` that uses `kkt_system=VecchiaKKTSystem`, as a `NamedTuple` with
 """
 function vecchia_kkt_stats end
 
-export VecchiaModel, VecchiaKKTSystem, recover_factor, vecchia_kkt_stats
+export VecchiaModel, VecchiaKKTSystem, recover_factor
 
 end

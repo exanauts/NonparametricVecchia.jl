@@ -3,26 +3,34 @@
 This tutorial explains how to measure the time spent in each phase of the estimation, and how
 to check the complexity of the method.
 With `n` columns, `k` conditioning points per column and `m` replicates, the cost of the
-estimation splits into the following phases:
+estimation splits into five phases, which correspond to the terms of the complexity
+`O(n m k² + n k³ + N_it n k²)` of the method, where `N_it` is the number of iterations:
 
-| Phase | Where | Cost | How to measure it |
-|:------|:------|:-----|:------------------|
-| Assembly of the blocks `Hⱼ` of the Hessian | `VecchiaModel` constructor (`VecchiaCache`) | `O(n m k²)`, once | `@elapsed VecchiaModel(...)` |
-| Initialization of MadNLP (including the creation of the KKT system) | `MadNLPSolver` constructor | `O(n k²)`, once | `solver.cnt.init_time` |
-| Evaluations of the objective, gradient and Hessian | `VecchiaModel` (NLPModels API) | `O(n k²)` per evaluation | `solver.cnt.eval_function_time` |
-| Cholesky factorizations of the blocks `Hⱼ` | `VecchiaKKTSystem` | `O(n k³)`, about twice | `factorization_time` |
-| `2 × 2` systems and inertia | `VecchiaKKTSystem` | `O(n)` per iteration | `schur_time` |
-| Backsolves | `VecchiaKKTSystem` | `O(n k²)` per backsolve | `backsolve_time` |
-| Products with the KKT matrix (iterative refinement) | `VecchiaKKTSystem` | `O(n k²)` per product | `product_time` |
+| Phase | Cost | How to measure it |
+|:------|:-----|:------------------|
+| Assembly of the blocks `Hⱼ` of the Hessian (`VecchiaCache`) | `O(n m k²)`, once | `@elapsed VecchiaModel(...)` |
+| Factorizations of the blocks `Hⱼ` | `O(n k³)`, about twice | `factorization_time` |
+| Solves of the KKT systems | `O(n k²)` per iteration | `backsolve_time + product_time + schur_time` |
+| Evaluations of the objective, gradient and Hessian | `O(n k²)` per iteration | `solver.cnt.eval_function_time` |
+| MadNLP (initialization and interior-point method) | | the remaining time |
 
-The blocks `Hⱼ` do not depend on the iterate, so they are assembled once, when the model is built,
-and the objective and its derivatives are then evaluated from them without going back to the samples.
+The blocks `Hⱼ` do not depend on the iterate, so they are assembled once, by the constructor of
+[`VecchiaModel`](@ref), and the objective and its derivatives are then evaluated from them without
+going back to the samples.
 Unlike a sparse linear solver, [`VecchiaKKTSystem`](@ref) has no symbolic analysis phase:
 the block structure of the KKT systems is known in advance, and only the offsets of the blocks
 are computed when the KKT system is created.
 The blocks are factorized when MadNLP initializes the multipliers (with a zero Hessian) and once
 with the actual Hessian; they are then reused at every iteration, unless MadNLP has to regularize
-the KKT system. All timings and counters of the linear algebra are returned by [`vecchia_kkt_stats`](@ref).
+the KKT system.
+Each solve of a KKT system consists of a backsolve with the blocks `Hⱼ`, the solution of `n`
+independent `2 × 2` systems, and products with the KKT matrix for the iterative refinement of MadNLP.
+
+The timings and counters of the linear algebra are returned by
+[`NonparametricVecchia.vecchia_kkt_stats`](@ref), which is only available for a `MadNLPSolver`
+created with `kkt_system=VecchiaKKTSystem`. It also gives the details of each phase:
+time of the `2 × 2` systems and of the inertia, time of the products, number of calls,
+and number of block factorizations.
 
 ## Breakdown of a solve
 
@@ -58,9 +66,9 @@ nothing # hide
 ```
 
 The assembly of the blocks `Hⱼ` is measured when the model is built, and the other phases are
-measured during the solve. The initialization of MadNLP includes the creation of the KKT system,
-and the rest of MadNLP corresponds to the operations of the interior-point method itself
-(line search, update of the iterates and of the barrier parameter, convergence tests):
+measured during the solve. The time of MadNLP includes its initialization (in particular the
+creation of the KKT system) and the operations of the interior-point method itself (line search,
+update of the iterates and of the barrier parameter, convergence tests):
 
 ```@example timings
 n, k, m = 20_000, 10, 200
@@ -71,22 +79,21 @@ time_assembly = @elapsed (nlp = VecchiaModel(pattern, samples))
 
 solver = MadNLPSolver(nlp; kkt_system=VecchiaKKTSystem, print_level=MadNLP.ERROR)
 MadNLP.solve!(solver)
-stats = vecchia_kkt_stats(solver)
+stats = NonparametricVecchia.vecchia_kkt_stats(solver)
 
-time_linear_algebra = stats.factorization_time + stats.schur_time + stats.backsolve_time + stats.product_time
-time_madnlp = solver.cnt.total_time - solver.cnt.init_time - solver.cnt.eval_function_time - time_linear_algebra
+time_solves = stats.backsolve_time + stats.product_time + stats.schur_time
+time_evaluations = solver.cnt.eval_function_time
+time_madnlp = solver.cnt.total_time - time_evaluations - stats.factorization_time - time_solves
+
 phases = [
-    "Assembly of the blocks Hⱼ"     => time_assembly,
-    "Initialization of MadNLP"      => solver.cnt.init_time,
-    "Function evaluations"          => solver.cnt.eval_function_time,
-    "Factorizations of the blocks"  => stats.factorization_time,
-    "2 × 2 systems and inertia"     => stats.schur_time,
-    "Backsolves"                    => stats.backsolve_time,
-    "Products with the KKT matrix"  => stats.product_time,
-    "Rest of MadNLP"                => time_madnlp,
+    ("Assembly of the blocks Hⱼ",    "O(n m k²), once",        time_assembly),
+    ("Factorizations of the blocks", "O(n k³), about twice",   stats.factorization_time),
+    ("Solves of the KKT systems",    "O(n k²) per iteration",  time_solves),
+    ("Function evaluations",         "O(n k²) per iteration",  time_evaluations),
+    ("MadNLP",                       "",                       time_madnlp),
 ]
-for (phase, time) in phases
-    println(rpad(phase, 32), round(1000 * time, digits=2), " ms")
+for (phase, cost, time) in phases
+    println(rpad(phase, 30), rpad(cost, 24), lpad(round(1000 * time, digits=1), 8), " ms")
 end
 ```
 
@@ -122,7 +129,7 @@ function measure(n, k, m; repetitions = 3)
     nlp = VecchiaModel(pattern, samples)
     solver = MadNLPSolver(nlp; kkt_system=VecchiaKKTSystem, print_level=MadNLP.ERROR)
     MadNLP.solve!(solver)
-    stats = vecchia_kkt_stats(solver)
+    stats = NonparametricVecchia.vecchia_kkt_stats(solver)
     return (assembly = assembly,
             factorization = stats.factorization_time,
             backsolve = stats.backsolve_time / stats.nbacksolves)
@@ -161,7 +168,7 @@ smaller for small problems:
   the exponents larger than expected.
 
 Fitting the exponents on the largest values of each parameter gives a better estimate of the
-asymptotic behavior. The same measurements can be done on GPU, since [`vecchia_kkt_stats`](@ref)
+asymptotic behavior. The same measurements can be done on GPU, since [`NonparametricVecchia.vecchia_kkt_stats`](@ref)
 is also available for models built from a `CuMatrix` or a `ROCMatrix`. The factorizations and the
 solves synchronize the GPU, but the construction of the model must be followed by
 `CUDA.synchronize()` or `AMDGPU.synchronize()` before measuring its time.
