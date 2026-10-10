@@ -3,7 +3,7 @@ module NonparametricVecchiaMadNLPExt
 using LinearAlgebra
 using MadNLP
 using NonparametricVecchia
-using NonparametricVecchia: VecchiaModel, VecchiaKKTSystem, vecchia_factorize_blocks!,
+using NonparametricVecchia: VecchiaModel, VecchiaKKTSystem, vecchia_kkt_stats, vecchia_factorize_blocks!,
                             vecchia_solve_blocks!, vecchia_update_blocks!, vecchia_mul_blocks!
 
 #=
@@ -63,6 +63,7 @@ mutable struct VecchiaBlockSolver{T, VT, VI} <: MadNLP.AbstractLinearSolver{T}
     hinv_col::VT             # columns (Hⱼ + Σₓⱼ)⁻¹ e_{dⱼ}
     minv::VT                 # diagonal coefficients of (Hⱼ + Σₓⱼ)⁻¹ at the positions dⱼ
     info::VI
+    nfact::VI                # number of factorizations of each block Hⱼ + Σₓⱼ
     # 2 × 2 systems [q d; d e]
     jx::VT
     jw::VT
@@ -71,6 +72,14 @@ mutable struct VecchiaBlockSolver{T, VT, VI} <: MadNLP.AbstractLinearSolver{T}
     det::VT
     buffer::VT
     inertia::Tuple{Int, Int, Int}
+    # Cumulative timings (in seconds) and counters, see `vecchia_kkt_stats`
+    time_factorization::Float64
+    time_schur::Float64
+    time_backsolve::Float64
+    time_product::Float64
+    nfactorizations::Int
+    nbacksolves::Int
+    nproducts::Int
 end
 
 struct VecchiaKKT{T, VT, MT, QN, VI} <: MadNLP.AbstractReducedKKTSystem{T, VT, MT, QN}
@@ -155,8 +164,10 @@ function MadNLP.create_kkt_system(
         p, n, nnzh_obj, m, xoff, hoff, dloc, diagL,
         hess, jac, pr_diag, du_diag,
         zeros_vt(nnzh_obj), hess_copy, pr_copy, zeros_vt(p), zeros_vt(n), info,
+        _to_device(ref, zeros(Int, n)),
         zeros_vt(n), zeros_vt(n), zeros_vt(n), zeros_vt(n), zeros_vt(n), zeros_vt(n),
         (0, 0, 0),
+        0.0, 0.0, 0.0, 0.0, 0, 0, 0,
     )
 
     quasi_newton = MadNLP.create_quasi_newton(MadNLP.ExactHessian, cb, p + n)
@@ -225,6 +236,7 @@ function LinearAlgebra.mul!(
     beta = zero(T),
 ) where T
     ls = kkt.linear_solver
+    t0 = time_ns()
     p, n = ls.p, ls.n
     wp, xp = MadNLP.primal(w), MadNLP.primal(x)
     wy, xy = MadNLP.dual(w), MadNLP.dual(x)
@@ -247,6 +259,8 @@ function LinearAlgebra.mul!(
     end
 
     MadNLP._kktmul!(w, x, kkt.reg, kkt.du_diag, kkt.l_lower, kkt.u_lower, kkt.l_diag, kkt.u_diag, alpha, beta)
+    ls.time_product += (time_ns() - t0) / 1e9
+    ls.nproducts += 1
     return w
 end
 
@@ -256,8 +270,10 @@ end
 
 function MadNLP.factorize!(ls::VecchiaBlockSolver{T}) where T
     p, n = ls.p, ls.n
-    vecchia_factorize_blocks!(ls.L, ls.hess_copy, ls.pr_copy, ls.hinv_col, ls.minv, ls.info,
+    t0 = time_ns()
+    vecchia_factorize_blocks!(ls.L, ls.hess_copy, ls.pr_copy, ls.hinv_col, ls.minv, ls.info, ls.nfact,
                               ls.hess, ls.pr_diag, ls.m, ls.xoff, ls.hoff, ls.dloc)
+    t1 = time_ns()
 
     ls.jx .= view(ls.jac, 1:n)
     ls.jw .= view(ls.jac, n+1:2n)
@@ -278,6 +294,9 @@ function MadNLP.factorize!(ls::VecchiaBlockSolver{T}) where T
         nzero = round(Int, sum(ls.buffer))
         ls.inertia = (p + npos, nzero, 2n - npos - nzero)
     end
+    ls.time_factorization += (t1 - t0) / 1e9
+    ls.time_schur += (time_ns() - t1) / 1e9
+    ls.nfactorizations += 1
     return ls
 end
 
@@ -289,6 +308,7 @@ MadNLP.is_supported(::Type{<:VecchiaBlockSolver}, ::Type{T}) where T <: Abstract
 
 function MadNLP.solve_kkt!(kkt::VecchiaKKT, w::MadNLP.AbstractKKTVector)
     ls = kkt.linear_solver
+    t0 = time_ns()
     p, n = ls.p, ls.n
     MadNLP.reduce_rhs!(kkt, w)
     wp = MadNLP.primal(w)
@@ -311,7 +331,26 @@ function MadNLP.solve_kkt!(kkt::VecchiaKKT, w::MadNLP.AbstractKKTVector)
     vecchia_update_blocks!(wp, ls.hinv_col, ls.buffer, ls.m, ls.xoff)
 
     MadNLP.finish_aug_solve!(kkt, w)
+    ls.time_backsolve += (time_ns() - t0) / 1e9
+    ls.nbacksolves += 1
     return w
 end
+
+function NonparametricVecchia.vecchia_kkt_stats(kkt::VecchiaKKT)
+    ls = kkt.linear_solver
+    return (
+        factorization_time = ls.time_factorization,
+        schur_time = ls.time_schur,
+        backsolve_time = ls.time_backsolve,
+        product_time = ls.time_product,
+        nfactorizations = ls.nfactorizations,
+        nbacksolves = ls.nbacksolves,
+        nproducts = ls.nproducts,
+        nblocks = ls.n,
+        nblocks_factorized = sum(ls.nfact),
+    )
+end
+
+NonparametricVecchia.vecchia_kkt_stats(solver::MadNLP.MadNLPSolver) = vecchia_kkt_stats(solver.kkt)
 
 end # module

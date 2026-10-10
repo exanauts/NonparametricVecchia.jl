@@ -57,7 +57,8 @@ end
 
 # Factorize Hⱼ + Σₓⱼ if it changed since the last factorization, and compute the column
 # of (Hⱼ + Σₓⱼ)⁻¹ associated with the diagonal entry of the factor.
-@inline function _vecchia_factorize_block!(j, L, hess_copy, pr_copy, hinv_col, minv, info,
+# nfact[j] counts the number of factorizations of the block j.
+@inline function _vecchia_factorize_block!(j, L, hess_copy, pr_copy, hinv_col, minv, info, nfact,
                                            hess, pr_diag, m, xoff, hoff, dloc)
     T = eltype(L)
     mj = m[j]
@@ -84,6 +85,7 @@ end
         end
         flag = _packed_cholesky!(L, ho, mj)
         info[j] = flag
+        nfact[j] += 1
         if flag == 0
             d = dloc[j]
             for k in 1:mj
@@ -126,10 +128,10 @@ end
     Operations on all blocks, used by `VecchiaKKTSystem`.
     The methods below run on CPU; the KernelAbstractions extension implements them with GPU kernels.
 =#
-function vecchia_factorize_blocks!(L::Vector, hess_copy, pr_copy, hinv_col, minv, info,
+function vecchia_factorize_blocks!(L::Vector, hess_copy, pr_copy, hinv_col, minv, info, nfact,
                                    hess, pr_diag, m, xoff, hoff, dloc)
     for j in eachindex(m)
-        _vecchia_factorize_block!(j, L, hess_copy, pr_copy, hinv_col, minv, info,
+        _vecchia_factorize_block!(j, L, hess_copy, pr_copy, hinv_col, minv, info, nfact,
                                   hess, pr_diag, m, xoff, hoff, dloc)
     end
     return L

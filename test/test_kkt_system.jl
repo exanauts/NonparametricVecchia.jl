@@ -119,6 +119,20 @@ end
         end
     end
 
+    @testset "Statistics" begin
+        nlp = VecchiaModel(banded_L(100, 5), samples; lambda=1e-2)
+        solver = MadNLPSolver(nlp; kkt_system=VecchiaKKTSystem, print_level=MadNLP.ERROR)
+        MadNLP.solve!(solver)
+        stats = vecchia_kkt_stats(solver)
+        @test stats.nblocks == 100
+        @test stats.nfactorizations ≥ solver.cnt.k
+        @test stats.nbacksolves ≥ solver.cnt.k
+        # The blocks are factorized for the initialization of the multipliers and once with the
+        # Hessian, and then reused since the Hessian of the objective and the regularization do not change.
+        @test stats.nblocks_factorized == 2 * stats.nblocks
+        @test all(≥(0), (stats.factorization_time, stats.schur_time, stats.backsolve_time, stats.product_time))
+    end
+
     @testset "Active bounds" begin
         nlp = VecchiaModel(banded_L(100, 5), samples; lvar_diag=fill(1.0, 100), uvar_diag=fill(2.0, 100))
         ref = madnlp(nlp; print_level=MadNLP.ERROR)
